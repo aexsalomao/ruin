@@ -8,10 +8,15 @@ Sign convention: returns are dimensionless fractions (0.01 = 1%).
 
 from __future__ import annotations
 
-import numpy as np
 import polars as pl
 
-from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
+from ruin._internal.validate import (
+    FLOAT_DTYPE,
+    ReturnInput,
+    require_minimum_length,
+    require_strictly_positive,
+    to_series,
+)
 
 
 def from_prices(prices: ReturnInput, *, log: bool = False) -> pl.Series:
@@ -36,11 +41,13 @@ def from_prices(prices: ReturnInput, *, log: bool = False) -> pl.Series:
     """
     p = to_series(prices, name="prices")
     require_minimum_length(p, 2, "from_prices")
+    if (p <= 0.0).any():
+        raise ValueError("'prices' must be strictly positive for return computation.")
     if log:
         r = (p / p.shift(1)).log()
     else:
         r = p / p.shift(1) - 1.0
-    return r.drop_nulls().drop_nans()
+    return r.drop_nulls().drop_nans().cast(FLOAT_DTYPE).rename("returns")
 
 
 def total_return(returns: ReturnInput) -> float:
@@ -90,16 +97,18 @@ def annualize_return(
     """
     r = to_series(returns)
     require_minimum_length(r, 1, "annualize_return")
-    if periods_per_year <= 0:
-        raise ValueError(f"'periods_per_year' must be positive; got {periods_per_year}")
+    require_strictly_positive(periods_per_year, "periods_per_year")
     if method == "geometric":
         n = len(r)
         tr = float((1.0 + r).product())
+        # Total return can be <= 0 (ruin); fractional powers of negative
+        # values are undefined. Return NaN rather than raising.
+        if tr <= 0.0:
+            return float("nan")
         return float(tr ** (periods_per_year / n)) - 1.0
-    elif method == "arithmetic":
+    if method == "arithmetic":
         return float(r.mean()) * periods_per_year  # type: ignore[operator]
-    else:
-        raise ValueError(f"Unknown method '{method}'; choose 'geometric' or 'arithmetic'.")
+    raise ValueError(f"Unknown method '{method}'; choose 'geometric' or 'arithmetic'.")
 
 
 def cagr(returns: ReturnInput, *, periods_per_year: float) -> float:

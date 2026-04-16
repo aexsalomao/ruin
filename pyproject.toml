@@ -42,7 +42,5 @@ packages = ["ruin"]
 mypy_path = "src"
 
 [tool.pytest.ini_options]
-strict_markers = true
-strict_config = true
-addopts = "--cov=ruin"
+addopts = "--cov=ruin --strict-markers --strict-config"
 testpaths = ["tests"]

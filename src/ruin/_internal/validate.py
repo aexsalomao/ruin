@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
 import polars as pl
 
-# Type alias for inputs accepted by all public functions
-ReturnInput = Union[pl.Series, pl.Expr, np.ndarray, pl.DataFrame]
+# Public float dtype for all Polars outputs.
+FLOAT_DTYPE: pl.DataType = pl.Float32
+
+# Internal float dtype used during computation. Float64 avoids catastrophic
+# cancellation in cum_prod / variance-style accumulators; results are cast to
+# FLOAT_DTYPE at the boundary of each public function.
+INTERNAL_FLOAT_DTYPE: pl.DataType = pl.Float64
+
+# Type alias for inputs accepted by all public functions.
+ReturnInput = pl.Series | pl.Expr | np.ndarray | pl.DataFrame
 
 
 def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
@@ -31,7 +37,8 @@ def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
     Returns
     -------
     pl.Series
-        Float64 Series with NaN / null values dropped.
+        Float64 Series with NaN / null values dropped. Internal math stays in
+        Float64; callers cast the *result* to Float32 before returning to users.
     """
     if isinstance(returns, pl.Expr):
         raise TypeError(
@@ -41,16 +48,16 @@ def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
     if isinstance(returns, np.ndarray):
         if returns.ndim != 1:
             raise ValueError(f"'{name}' must be a 1-D array, got shape {returns.shape}")
-        s = pl.Series(name, returns, dtype=pl.Float64)
+        s = pl.Series(name, returns, dtype=INTERNAL_FLOAT_DTYPE)
     elif isinstance(returns, pl.DataFrame):
         if returns.width != 1:
             raise ValueError(
                 f"'{name}' is a multi-column DataFrame; pass a single-column DataFrame "
                 "or use the multi-column path explicitly."
             )
-        s = returns.to_series(0).cast(pl.Float64)
+        s = returns.to_series(0).cast(INTERNAL_FLOAT_DTYPE)
     elif isinstance(returns, pl.Series):
-        s = returns.cast(pl.Float64)
+        s = returns.cast(INTERNAL_FLOAT_DTYPE)
     else:
         raise TypeError(
             f"'{name}' must be a pl.Series, pl.Expr, np.ndarray, or pl.DataFrame; "
@@ -80,14 +87,19 @@ def to_dataframe(returns: ReturnInput, name: str = "returns") -> pl.DataFrame:
         All columns cast to Float64, NaN/null dropped per column (row-wise drop).
     """
     if isinstance(returns, pl.DataFrame):
-        df = returns.cast({col: pl.Float64 for col in returns.columns})
+        df = returns.cast({col: INTERNAL_FLOAT_DTYPE for col in returns.columns})
         # Drop rows where ANY column is null/NaN
         return df.drop_nulls()
     s = to_series(returns, name=name)
     return s.to_frame()
 
 
-def require_same_length(a: pl.Series, b: pl.Series, name_a: str = "returns", name_b: str = "benchmark") -> None:
+def require_same_length(
+    a: pl.Series,
+    b: pl.Series,
+    name_a: str = "returns",
+    name_b: str = "benchmark",
+) -> None:
     """Raise ValueError if two Series have different lengths."""
     if len(a) != len(b):
         raise ValueError(

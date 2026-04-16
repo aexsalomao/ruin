@@ -7,37 +7,85 @@ aligned to the input with the leading ``window - 1`` values set to null.
 subject to the Series having an associated time index when a string is used. In practice,
 integer windows are the common case.
 
-NaN values in the input are propagated within each window.
+NaN values in the input are propagated within each window. Outputs are cast to
+``pl.Float32`` for memory efficiency; internal computation runs in ``pl.Float64``.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 import polars as pl
 
-from ruin._internal.validate import ReturnInput
+from ruin._internal.validate import FLOAT_DTYPE, INTERNAL_FLOAT_DTYPE, ReturnInput
 
 
 def _ensure_series(returns: ReturnInput) -> pl.Series:
     """Coerce to Series without NaN-dropping (rolling functions need aligned output)."""
     if isinstance(returns, pl.Series):
-        return returns.cast(pl.Float64)
+        return returns.cast(INTERNAL_FLOAT_DTYPE)
     if isinstance(returns, np.ndarray):
         if returns.ndim != 1:
             raise ValueError(f"Array must be 1-D; got shape {returns.shape}")
-        return pl.Series("returns", returns, dtype=pl.Float64)
+        return pl.Series("returns", returns, dtype=INTERNAL_FLOAT_DTYPE)
     if isinstance(returns, pl.DataFrame):
         if returns.width != 1:
             raise ValueError("Pass a single-column DataFrame for rolling functions.")
-        return returns.to_series(0).cast(pl.Float64)
+        return returns.to_series(0).cast(INTERNAL_FLOAT_DTYPE)
     raise TypeError(f"Unsupported type: {type(returns).__name__}")
 
 
 def _mp(min_periods: int | None, window: int | str) -> int | None:
     """Resolve min_periods (our kwarg) to the effective value passed to Polars (min_samples)."""
     if min_periods is not None:
+        if min_periods < 1:
+            raise ValueError(f"'min_periods' must be >= 1; got {min_periods}")
         return min_periods
     return window if isinstance(window, int) else 1
+
+
+def _require_int_window(window: int | str, func_name: str) -> int:
+    """Validate that a rolling function received an integer window."""
+    if not isinstance(window, int):
+        raise TypeError(f"{func_name} requires an integer window; got {type(window).__name__}.")
+    if window < 1:
+        raise ValueError(f"{func_name} requires window >= 1; got {window}.")
+    return window
+
+
+def _require_matching_lengths(r: pl.Series, b: pl.Series) -> None:
+    """Raise if returns and benchmark have different lengths."""
+    if len(r) != len(b):
+        raise ValueError(f"returns (len={len(r)}) and benchmark (len={len(b)}) must match.")
+
+
+def _window_apply(
+    s: pl.Series,
+    window: int,
+    min_periods: int,
+    fn: Callable[[pl.Series], float],
+    *,
+    name: str,
+) -> pl.Series:
+    """Apply a scalar metric over rolling windows and return a Float32 Series.
+
+    Used by rolling metrics that cannot be expressed as a single Polars rolling
+    expression (e.g. skewness, kurtosis, path-dependent max drawdown). Windows
+    with fewer than *min_periods* non-null values emit null.
+    """
+    n = len(s)
+    result: list[float | None] = [None] * n
+    for i in range(window - 1, n):
+        w = s.slice(i - window + 1, window)
+        valid = w.drop_nans().drop_nulls()
+        if len(valid) < min_periods:
+            continue
+        try:
+            result[i] = float(fn(valid))
+        except (ValueError, ZeroDivisionError):
+            result[i] = None
+    return pl.Series(name, result, dtype=FLOAT_DTYPE)
 
 
 def rolling_volatility(
@@ -66,7 +114,8 @@ def rolling_volatility(
         Rolling volatility, length-aligned to input. Leading nulls for incomplete windows.
     """
     s = _ensure_series(returns)
-    return s.rolling_std(window_size=window, min_samples=_mp(min_periods, window), ddof=ddof)
+    out = s.rolling_std(window_size=window, min_samples=_mp(min_periods, window), ddof=ddof)
+    return out.cast(FLOAT_DTYPE).rename("rolling_volatility")
 
 
 def rolling_downside_deviation(
@@ -96,7 +145,10 @@ def rolling_downside_deviation(
     """
     s = _ensure_series(returns)
     downside = (s - threshold).clip(upper_bound=0.0)
-    return (downside**2).rolling_mean(window_size=window, min_samples=_mp(min_periods, window)).sqrt()
+    out = (downside**2).rolling_mean(
+        window_size=window, min_samples=_mp(min_periods, window)
+    ).sqrt()
+    return out.cast(FLOAT_DTYPE).rename("rolling_downside_deviation")
 
 
 def rolling_sharpe(
@@ -137,7 +189,7 @@ def rolling_sharpe(
     roll_std = excess.rolling_std(window_size=window, min_samples=mp, ddof=ddof)
     ann_mean = roll_mean * periods_per_year
     ann_std = roll_std * (periods_per_year**0.5)
-    return ann_mean / ann_std
+    return (ann_mean / ann_std).cast(FLOAT_DTYPE).rename("rolling_sharpe")
 
 
 def rolling_sortino(
@@ -180,7 +232,7 @@ def rolling_sortino(
     roll_dd = (downside**2).rolling_mean(window_size=window, min_samples=mp).sqrt()
     ann_mean = roll_mean * periods_per_year
     ann_dd = roll_dd * (periods_per_year**0.5)
-    return ann_mean / ann_dd
+    return (ann_mean / ann_dd).cast(FLOAT_DTYPE).rename("rolling_sortino")
 
 
 def rolling_beta(
@@ -210,17 +262,15 @@ def rolling_beta(
     """
     r = _ensure_series(returns)
     b = _ensure_series(benchmark)
-    if len(r) != len(b):
-        raise ValueError(f"returns (len={len(r)}) and benchmark (len={len(b)}) must match.")
-    if not isinstance(window, int):
-        raise TypeError("rolling_beta requires an integer window.")
+    _require_matching_lengths(r, b)
+    _require_int_window(window, "rolling_beta")
     mp = _mp(min_periods, window)
     df = pl.DataFrame({"r": r, "b": b})
     roll_cov = df.select(
         pl.rolling_cov("r", "b", window_size=window, min_samples=mp)
     ).to_series()
     roll_var = df["b"].rolling_var(window_size=window, min_samples=mp)
-    return roll_cov / roll_var
+    return (roll_cov / roll_var).cast(FLOAT_DTYPE).rename("rolling_beta")
 
 
 def rolling_correlation(
@@ -250,15 +300,14 @@ def rolling_correlation(
     """
     r = _ensure_series(returns)
     b = _ensure_series(benchmark)
-    if len(r) != len(b):
-        raise ValueError(f"returns (len={len(r)}) and benchmark (len={len(b)}) must match.")
-    if not isinstance(window, int):
-        raise TypeError("rolling_correlation requires an integer window.")
+    _require_matching_lengths(r, b)
+    _require_int_window(window, "rolling_correlation")
     mp = _mp(min_periods, window)
     df = pl.DataFrame({"r": r, "b": b})
-    return df.select(
+    out = df.select(
         pl.rolling_corr("r", "b", window_size=window, min_samples=mp)
     ).to_series()
+    return out.cast(FLOAT_DTYPE).rename("rolling_correlation")
 
 
 def rolling_tracking_error(
@@ -294,11 +343,13 @@ def rolling_tracking_error(
     """
     r = _ensure_series(returns)
     b = _ensure_series(benchmark)
-    if len(r) != len(b):
-        raise ValueError(f"returns (len={len(r)}) and benchmark (len={len(b)}) must match.")
+    _require_matching_lengths(r, b)
     mp = _mp(min_periods, window)
     active = r - b
-    return active.rolling_std(window_size=window, min_samples=mp, ddof=ddof) * (periods_per_year**0.5)
+    out = active.rolling_std(window_size=window, min_samples=mp, ddof=ddof) * (
+        periods_per_year**0.5
+    )
+    return out.cast(FLOAT_DTYPE).rename("rolling_tracking_error")
 
 
 def rolling_alpha(
@@ -334,15 +385,17 @@ def rolling_alpha(
     """
     r = _ensure_series(returns)
     b = _ensure_series(benchmark)
-    if len(r) != len(b):
-        raise ValueError(f"returns (len={len(r)}) and benchmark (len={len(b)}) must match.")
+    _require_matching_lengths(r, b)
     mp = _mp(min_periods, window)
     r_exc = r - risk_free
     b_exc = b - risk_free
     roll_mean_r = r_exc.rolling_mean(window_size=window, min_samples=mp)
     roll_mean_b = b_exc.rolling_mean(window_size=window, min_samples=mp)
-    roll_beta = rolling_beta(r, b, window=window, min_periods=min_periods)
-    return (roll_mean_r - roll_beta * roll_mean_b) * periods_per_year
+    roll_beta_series = rolling_beta(r, b, window=window, min_periods=min_periods).cast(
+        INTERNAL_FLOAT_DTYPE
+    )
+    out = (roll_mean_r - roll_beta_series * roll_mean_b) * periods_per_year
+    return out.cast(FLOAT_DTYPE).rename("rolling_alpha")
 
 
 def rolling_skewness(
@@ -370,20 +423,9 @@ def rolling_skewness(
     from ruin.distribution import skewness as _skewness
 
     s = _ensure_series(returns)
-    if not isinstance(window, int):
-        raise TypeError("rolling_skewness requires an integer window.")
-    mp = min_periods if min_periods is not None else window
-    n = len(s)
-    result: list[float | None] = [None] * n
-    for i in range(window - 1, n):
-        w = s.slice(i - window + 1, window)
-        valid = w.drop_nans().drop_nulls()
-        if len(valid) >= mp:
-            try:
-                result[i] = _skewness(valid)
-            except Exception:
-                result[i] = None
-    return pl.Series("rolling_skewness", result, dtype=pl.Float64)
+    window_int = _require_int_window(window, "rolling_skewness")
+    mp = min_periods if min_periods is not None else window_int
+    return _window_apply(s, window_int, mp, _skewness, name="rolling_skewness")
 
 
 def rolling_excess_kurtosis(
@@ -411,20 +453,9 @@ def rolling_excess_kurtosis(
     from ruin.distribution import excess_kurtosis as _kurtosis
 
     s = _ensure_series(returns)
-    if not isinstance(window, int):
-        raise TypeError("rolling_excess_kurtosis requires an integer window.")
-    mp = min_periods if min_periods is not None else window
-    n = len(s)
-    result: list[float | None] = [None] * n
-    for i in range(window - 1, n):
-        w = s.slice(i - window + 1, window)
-        valid = w.drop_nans().drop_nulls()
-        if len(valid) >= mp:
-            try:
-                result[i] = _kurtosis(valid)
-            except Exception:
-                result[i] = None
-    return pl.Series("rolling_excess_kurtosis", result, dtype=pl.Float64)
+    window_int = _require_int_window(window, "rolling_excess_kurtosis")
+    mp = min_periods if min_periods is not None else window_int
+    return _window_apply(s, window_int, mp, _kurtosis, name="rolling_excess_kurtosis")
 
 
 def rolling_autocorrelation(
@@ -455,20 +486,13 @@ def rolling_autocorrelation(
     from ruin.distribution import autocorrelation as _autocorr
 
     s = _ensure_series(returns)
-    if not isinstance(window, int):
-        raise TypeError("rolling_autocorrelation requires an integer window.")
-    mp = min_periods if min_periods is not None else window
-    n = len(s)
-    result: list[float | None] = [None] * n
-    for i in range(window - 1, n):
-        w = s.slice(i - window + 1, window)
-        valid = w.drop_nans().drop_nulls()
-        if len(valid) >= mp:
-            try:
-                result[i] = _autocorr(valid, lag=lag)
-            except Exception:
-                result[i] = None
-    return pl.Series("rolling_autocorrelation", result, dtype=pl.Float64)
+    window_int = _require_int_window(window, "rolling_autocorrelation")
+    mp = min_periods if min_periods is not None else window_int
+
+    def _apply(series: pl.Series) -> float:
+        return _autocorr(series, lag=lag)
+
+    return _window_apply(s, window_int, mp, _apply, name="rolling_autocorrelation")
 
 
 def rolling_max_drawdown(
@@ -498,20 +522,9 @@ def rolling_max_drawdown(
     from ruin.drawdown import max_drawdown as _mdd
 
     s = _ensure_series(returns)
-    if not isinstance(window, int):
-        raise TypeError("rolling_max_drawdown requires an integer window.")
-    mp = min_periods if min_periods is not None else window
-    n = len(s)
-    result: list[float | None] = [None] * n
-    for i in range(window - 1, n):
-        w = s.slice(i - window + 1, window)
-        valid = w.drop_nans().drop_nulls()
-        if len(valid) >= mp:
-            try:
-                result[i] = _mdd(valid)
-            except Exception:
-                result[i] = None
-    return pl.Series("rolling_max_drawdown", result, dtype=pl.Float64)
+    window_int = _require_int_window(window, "rolling_max_drawdown")
+    mp = min_periods if min_periods is not None else window_int
+    return _window_apply(s, window_int, mp, _mdd, name="rolling_max_drawdown")
 
 
 def rolling_hit_rate(
@@ -541,8 +554,9 @@ def rolling_hit_rate(
     """
     s = _ensure_series(returns)
     mp = _mp(min_periods, window)
-    wins = (s > threshold).cast(pl.Float64)
-    return wins.rolling_mean(window_size=window, min_samples=mp)
+    wins = (s > threshold).cast(INTERNAL_FLOAT_DTYPE)
+    out = wins.rolling_mean(window_size=window, min_samples=mp)
+    return out.cast(FLOAT_DTYPE).rename("rolling_hit_rate")
 
 
 def rolling_profit_factor(
@@ -573,17 +587,10 @@ def rolling_profit_factor(
     from ruin.activity import profit_factor as _pf
 
     s = _ensure_series(returns)
-    if not isinstance(window, int):
-        raise TypeError("rolling_profit_factor requires an integer window.")
-    mp = min_periods if min_periods is not None else window
-    n = len(s)
-    result: list[float | None] = [None] * n
-    for i in range(window - 1, n):
-        w = s.slice(i - window + 1, window)
-        valid = w.drop_nans().drop_nulls()
-        if len(valid) >= mp:
-            try:
-                result[i] = _pf(valid, threshold=threshold)
-            except Exception:
-                result[i] = None
-    return pl.Series("rolling_profit_factor", result, dtype=pl.Float64)
+    window_int = _require_int_window(window, "rolling_profit_factor")
+    mp = min_periods if min_periods is not None else window_int
+
+    def _apply(series: pl.Series) -> float:
+        return _pf(series, threshold=threshold)
+
+    return _window_apply(s, window_int, mp, _apply, name="rolling_profit_factor")

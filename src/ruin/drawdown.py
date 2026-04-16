@@ -7,11 +7,14 @@ NaN values are dropped before computation.
 
 from __future__ import annotations
 
-import math
-
 import polars as pl
 
-from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
+from ruin._internal.validate import (
+    FLOAT_DTYPE,
+    ReturnInput,
+    require_minimum_length,
+    to_series,
+)
 
 
 def drawdown_series(returns: ReturnInput) -> pl.Series:
@@ -32,10 +35,10 @@ def drawdown_series(returns: ReturnInput) -> pl.Series:
     require_minimum_length(r, 1, "drawdown_series")
     # Prepend initial wealth of 1.0 so the HWM starts at the investment date,
     # making first-period losses visible as drawdowns.
-    wealth = pl.concat([pl.Series([1.0]), (1.0 + r).cum_prod()])
+    wealth = pl.concat([pl.Series([1.0], dtype=r.dtype), (1.0 + r).cum_prod()])
     hwm = wealth.cum_max()
     dd = wealth / hwm - 1.0
-    return dd.slice(1).rename("drawdown")
+    return dd.slice(1).rename("drawdown").cast(FLOAT_DTYPE)
 
 
 def max_drawdown(returns: ReturnInput) -> float:

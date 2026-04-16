@@ -7,7 +7,6 @@ Rate conversion functions are pure arithmetic.
 from __future__ import annotations
 
 import datetime
-from typing import Union
 
 import polars as pl
 

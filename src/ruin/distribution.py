@@ -13,6 +13,14 @@ import polars as pl
 
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 
+__all__ = [
+    "JarqueBeraResult",
+    "autocorrelation",
+    "excess_kurtosis",
+    "jarque_bera",
+    "skewness",
+]
+
 
 @dataclass(frozen=True)
 class JarqueBeraResult:
@@ -52,21 +60,17 @@ def skewness(returns: ReturnInput, *, bias: bool = False) -> float:
     n = len(r)
     mu = float(r.mean())  # type: ignore[arg-type]
     sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
-    if sigma == 0.0:
+    # Guard against floating-point noise around zero variance: unique() on a
+    # truly constant series is exactly one element.
+    if sigma == 0.0 or r.n_unique() <= 1:
         return float("nan")
     cube = ((r - mu) / sigma) ** 3
     m3 = float(cube.mean())  # type: ignore[arg-type]
     if bias:
         return m3
-    # Fisher-Pearson unbiased correction
-    correction = (n * (n + 1)) / ((n - 1) * (n - 2)) * float(cube.sum()) / (sigma**0)
-    # Simpler: adjusted = n / ((n-1) * (n-2)) * sum((r - mean)^3) / std^3
-    adj = (n * (n - 1)) ** 0.5 / (n - 2) * m3
-    # Standard unbiased formula (SAS/SPSS convention):
-    # skew = n/((n-1)*(n-2)) * sum((x-mean)^3 / s^3)
-    raw_skew = float(cube.sum()) / n  # same as m3 above
-    unbiased = (n**2) / ((n - 1) * (n - 2)) * raw_skew
-    return unbiased
+    # Fisher-Pearson unbiased correction (SAS/SPSS convention):
+    # skew = n**2 / ((n-1)*(n-2)) * mean(((x - mean) / std)**3)
+    return (n**2) / ((n - 1) * (n - 2)) * m3
 
 
 def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
@@ -92,20 +96,19 @@ def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
     n = len(r)
     mu = float(r.mean())  # type: ignore[arg-type]
     sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
-    if sigma == 0.0:
+    if sigma == 0.0 or r.n_unique() <= 1:
         return float("nan")
     quad = ((r - mu) / sigma) ** 4
     m4 = float(quad.mean())  # type: ignore[arg-type]
     if bias:
         return m4 - 3.0
-    # Unbiased (Fisher) excess kurtosis (SAS/SPSS/Excel KURT):
-    # (n*(n+1)) / ((n-1)*(n-2)*(n-3)) * sum(z^4) - 3*(n-1)^2 / ((n-2)*(n-3))
-    k_biased = float(quad.sum())  # sum of z^4
-    unbiased = (
-        n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * k_biased
+    # Unbiased (Fisher) excess kurtosis (SAS/SPSS/Excel KURT convention):
+    # (n*(n+1)) / ((n-1)*(n-2)*(n-3)) * sum(z**4) - 3*(n-1)**2 / ((n-2)*(n-3))
+    sum_quad = float(quad.sum())
+    return (
+        n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * sum_quad
         - 3.0 * (n - 1) ** 2 / ((n - 2) * (n - 3))
     )
-    return unbiased
 
 
 def jarque_bera(returns: ReturnInput) -> JarqueBeraResult:

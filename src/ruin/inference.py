@@ -7,7 +7,7 @@ All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
 from __future__ import annotations
 
 import math
-from typing import Any, Callable
+from collections.abc import Callable
 
 import numpy as np
 import polars as pl

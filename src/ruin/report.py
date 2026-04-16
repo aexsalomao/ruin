@@ -7,9 +7,12 @@ a module-level function. No private logic, no metrics that only exist here.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 import polars as pl
 
-from ruin._internal.validate import ReturnInput, check_nan_strict, to_series
+from ruin._internal.validate import FLOAT_DTYPE, ReturnInput, check_nan_strict, to_series
 from ruin.activity import (
     average_loss,
     average_win,
@@ -93,14 +96,16 @@ def summary(
 
     # Handle DataFrame input (multi-strategy)
     if isinstance(returns, pl.DataFrame):
-        rows = []
+        rows: list[dict[str, Any]] = []
         for col in returns.columns:
             r_col = returns[col]
-            b_col = None
+            b_col: pl.Series | None
             if isinstance(benchmark, pl.DataFrame) and col in benchmark.columns:
                 b_col = benchmark[col]
-            elif isinstance(benchmark, (pl.Series, type(None))):
+            elif isinstance(benchmark, pl.Series):
                 b_col = benchmark
+            else:
+                b_col = None
             row = _compute_row(
                 r_col,
                 b_col,
@@ -109,23 +114,38 @@ def summary(
                 col_name=col,
             )
             rows.append(row)
-        return pl.from_dicts(rows)
+        return _cast_float_columns(pl.from_dicts(rows))
 
     r = to_series(returns)
     b = to_series(benchmark) if benchmark is not None else None
     row = _compute_row(r, b, risk_free=risk_free, periods_per_year=periods_per_year)
-    return pl.from_dicts([row])
+    return _cast_float_columns(pl.from_dicts([row]))
 
 
-def _safe(fn, *args, **kwargs):
-    """Call fn; return NaN on any exception."""
+def _cast_float_columns(df: pl.DataFrame) -> pl.DataFrame:
+    """Downcast every Float64 column to the public FLOAT_DTYPE (Float32)."""
+    float_cols = {
+        col: FLOAT_DTYPE
+        for col, dtype in zip(df.columns, df.dtypes, strict=True)
+        if dtype == pl.Float64
+    }
+    return df.cast(float_cols) if float_cols else df
+
+
+def _safe(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Call ``fn``; return NaN on expected numerical failures.
+
+    Only catches exceptions that indicate "metric is undefined for this input"
+    (e.g. too few observations, zero variance). Unexpected errors propagate so
+    bugs are not silently masked in production reports.
+    """
     try:
         result = fn(*args, **kwargs)
-        if result is None:
-            return float("nan")
-        return result
-    except Exception:
+    except (ValueError, ZeroDivisionError):
         return float("nan")
+    if result is None:
+        return float("nan")
+    return result
 
 
 def _compute_row(
@@ -135,9 +155,9 @@ def _compute_row(
     risk_free: float,
     periods_per_year: float,
     col_name: str = "returns",
-) -> dict:
+) -> dict[str, Any]:
     """Compute all metrics for a single return stream."""
-    row: dict = {"name": col_name}
+    row: dict[str, Any] = {"name": col_name}
 
     # Returns
     row["total_return"] = _safe(total_return, r)

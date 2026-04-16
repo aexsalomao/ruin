@@ -29,12 +29,10 @@ def beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
     """
     r, b = align_benchmark(returns, benchmark)
     require_minimum_length(r, 2, "beta")
-    df = pl.DataFrame({"r": r, "b": b})
-    cov_val = float(df.select(pl.corr("r", "b")).item()) * float(r.std(ddof=1)) * float(b.std(ddof=1))  # type: ignore[arg-type]
     var_b = float(b.var(ddof=1))  # type: ignore[arg-type]
     if var_b == 0.0:
         return float("nan")
-    return cov_val / var_b
+    return _cov_manual(r, b, ddof=1) / var_b
 
 
 def _cov_manual(a: pl.Series, b: pl.Series, ddof: int = 1) -> float:
