@@ -1,8 +1,4 @@
-"""Time-slicing helpers and rate conversion utilities.
-
-Period-slice functions require a Polars DataFrame/Series with a date column.
-Rate conversion functions are pure arithmetic.
-"""
+"""Time-slicing helpers and rate conversion. Period slicers require a date column; rate fns are pure arithmetic."""
 
 from __future__ import annotations
 
@@ -17,22 +13,7 @@ def mtd(
     date_col: str,
     as_of: datetime.date | None = None,
 ) -> pl.DataFrame | pl.Series:
-    """Slice a DataFrame/Series to month-to-date returns.
-
-    Parameters
-    ----------
-    returns:
-        Polars DataFrame (must include *date_col*) or Series with a date dtype.
-    date_col:
-        Name of the date column.
-    as_of:
-        Reference date. Defaults to today.
-
-    Returns
-    -------
-    pl.DataFrame | pl.Series
-        Rows where date is within the same calendar month as *as_of*.
-    """
+    """Month-to-date slice. `as_of` defaults to today; `returns` must carry a date dtype / column."""
     ref = as_of or datetime.date.today()
     month_start = ref.replace(day=1)
     if isinstance(returns, pl.Series):
@@ -48,22 +29,7 @@ def qtd(
     date_col: str,
     as_of: datetime.date | None = None,
 ) -> pl.DataFrame | pl.Series:
-    """Slice a DataFrame/Series to quarter-to-date returns.
-
-    Parameters
-    ----------
-    returns:
-        Polars DataFrame (must include *date_col*) or Series with a date dtype.
-    date_col:
-        Name of the date column.
-    as_of:
-        Reference date. Defaults to today.
-
-    Returns
-    -------
-    pl.DataFrame | pl.Series
-        Rows within the current quarter up to *as_of*.
-    """
+    """Quarter-to-date slice. `as_of` defaults to today."""
     ref = as_of or datetime.date.today()
     quarter_start_month = ((ref.month - 1) // 3) * 3 + 1
     quarter_start = ref.replace(month=quarter_start_month, day=1)
@@ -80,22 +46,7 @@ def ytd(
     date_col: str,
     as_of: datetime.date | None = None,
 ) -> pl.DataFrame | pl.Series:
-    """Slice a DataFrame/Series to year-to-date returns.
-
-    Parameters
-    ----------
-    returns:
-        Polars DataFrame (must include *date_col*) or Series with a date dtype.
-    date_col:
-        Name of the date column.
-    as_of:
-        Reference date. Defaults to today.
-
-    Returns
-    -------
-    pl.DataFrame | pl.Series
-        Rows within the current calendar year up to *as_of*.
-    """
+    """Year-to-date slice. `as_of` defaults to today."""
     ref = as_of or datetime.date.today()
     year_start = ref.replace(month=1, day=1)
     if isinstance(returns, pl.Series):
@@ -111,40 +62,14 @@ def trailing(
     n: int,
     date_col: str | None = None,
 ) -> pl.DataFrame | pl.Series:
-    """Return the last *n* rows of a DataFrame/Series.
-
-    Parameters
-    ----------
-    returns:
-        Polars DataFrame or Series.
-    n:
-        Number of trailing periods to include.
-    date_col:
-        Unused — included for API symmetry. Pass the sorted DataFrame directly.
-
-    Returns
-    -------
-    pl.DataFrame | pl.Series
-        Last *n* rows.
-    """
+    """Last `n` rows. `date_col` is unused — included for API symmetry; pass a sorted DataFrame."""
     if n <= 0:
         raise ValueError(f"'n' must be a positive integer; got {n}")
     return returns.tail(n)
 
 
 def since_inception(returns: pl.DataFrame | pl.Series) -> pl.DataFrame | pl.Series:
-    """Return the full series — identity function included for API symmetry.
-
-    Parameters
-    ----------
-    returns:
-        Polars DataFrame or Series.
-
-    Returns
-    -------
-    pl.DataFrame | pl.Series
-        The input unchanged.
-    """
+    """Identity function — included for API symmetry."""
     return returns
 
 
@@ -159,24 +84,7 @@ _FREQUENCY_PERIODS: dict[str, int] = {
 
 
 def periods_per_year_for(frequency: str) -> int:
-    """Return the conventional number of periods per year for a given frequency.
-
-    Parameters
-    ----------
-    frequency:
-        One of ``"D"`` (daily, 252), ``"W"`` (weekly, 52), ``"M"`` (monthly, 12),
-        ``"Q"`` (quarterly, 4), ``"A"`` / ``"Y"`` (annual, 1).
-
-    Returns
-    -------
-    int
-        Conventional periods per year.
-
-    Raises
-    ------
-    ValueError
-        If *frequency* is not recognized.
-    """
+    """Conventional periods/year for a frequency. D=252, W=52, M=12, Q=4, A/Y=1. Raises on unknown."""
     key = frequency.upper()
     if key not in _FREQUENCY_PERIODS:
         raise ValueError(
@@ -186,44 +94,14 @@ def periods_per_year_for(frequency: str) -> int:
 
 
 def annual_to_periodic(rate: float, *, periods_per_year: float) -> float:
-    """Convert an annualized rate to a per-period equivalent.
-
-    Uses geometric conversion: ``(1 + annual_rate)^(1/periods_per_year) - 1``.
-
-    Parameters
-    ----------
-    rate:
-        Annualized rate (e.g. 0.05 for 5%).
-    periods_per_year:
-        Number of periods per year.
-
-    Returns
-    -------
-    float
-        Per-period rate.
-    """
+    """Geometric convert annual -> periodic: `(1 + rate)^(1/periods_per_year) - 1`."""
     if periods_per_year <= 0:
         raise ValueError(f"'periods_per_year' must be positive; got {periods_per_year}")
     return (1.0 + rate) ** (1.0 / periods_per_year) - 1.0
 
 
 def periodic_to_annual(rate: float, *, periods_per_year: float) -> float:
-    """Convert a per-period rate to an annualized equivalent.
-
-    Uses geometric conversion: ``(1 + periodic_rate)^periods_per_year - 1``.
-
-    Parameters
-    ----------
-    rate:
-        Per-period rate (e.g. 0.004 for ~0.4%/month).
-    periods_per_year:
-        Number of periods per year.
-
-    Returns
-    -------
-    float
-        Annualized rate.
-    """
+    """Geometric convert periodic -> annual: `(1 + rate)^periods_per_year - 1`."""
     if periods_per_year <= 0:
         raise ValueError(f"'periods_per_year' must be positive; got {periods_per_year}")
     return (1.0 + rate) ** periods_per_year - 1.0

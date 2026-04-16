@@ -1,8 +1,4 @@
-"""Risk-adjusted performance ratios.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation.
-"""
+"""Risk-adjusted performance ratios. Inputs: pl.Series / np.ndarray / pl.DataFrame; NaNs dropped."""
 
 from __future__ import annotations
 
@@ -19,29 +15,7 @@ def sharpe_ratio(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized Sharpe ratio.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    risk_free:
-        Per-period risk-free rate. Default 0.0.
-    periods_per_year:
-        Number of periods in a year (e.g. 252 for daily).
-    ddof:
-        Delta degrees of freedom for volatility. Default 1.
-
-    Returns
-    -------
-    float
-        Sharpe ratio = annualized_excess_return / annualized_volatility.
-
-    Notes
-    -----
-    ``risk_free`` is a *per-period* rate, not annualized. Use
-    ``ruin.periods.annual_to_periodic`` to convert if needed.
-    """
+    """Annualized Sharpe: `ann_excess_return / ann_volatility`. `risk_free` is per-period, not annualized."""
     r = to_series(returns)
     require_minimum_length(r, ddof + 1, "sharpe_ratio")
     excess = r - risk_free
@@ -59,28 +33,9 @@ def sortino_ratio(
     threshold: float | None = None,
     periods_per_year: float,
 ) -> float:
-    """Annualized Sortino ratio.
+    """Annualized Sortino: `ann_excess_return / ann_downside_deviation`. `threshold` defaults to `risk_free`.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    risk_free:
-        Per-period risk-free rate. Default 0.0.
-    threshold:
-        Minimum acceptable return for downside deviation. Defaults to ``risk_free``.
-    periods_per_year:
-        Number of periods in a year.
-
-    Returns
-    -------
-    float
-        Sortino ratio = annualized_excess_return / annualized_downside_deviation.
-
-    Notes
-    -----
-    Downside deviation uses ``ddof=0`` (population convention). The denominator
-    counts all periods in the denominator, not just downside periods.
+    Downside deviation uses `ddof=0` with all periods in the denominator (not just downside).
     """
     r = to_series(returns)
     require_minimum_length(r, 1, "sortino_ratio")
@@ -94,20 +49,7 @@ def sortino_ratio(
 
 
 def calmar_ratio(returns: ReturnInput, *, periods_per_year: float) -> float:
-    """Calmar ratio: CAGR divided by absolute max drawdown.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year.
-
-    Returns
-    -------
-    float
-        Calmar ratio. ``float('nan')`` if max drawdown is zero.
-    """
+    """Calmar: CAGR / |max drawdown|. NaN if max drawdown is zero."""
     r = to_series(returns)
     require_minimum_length(r, 1, "calmar_ratio")
     ann_ret = annualize_return(r, periods_per_year=periods_per_year)
@@ -124,24 +66,7 @@ def information_ratio(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized information ratio.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-    periods_per_year:
-        Number of periods in a year.
-    ddof:
-        Delta degrees of freedom for tracking error. Default 1.
-
-    Returns
-    -------
-    float
-        IR = annualized_active_return / annualized_tracking_error.
-    """
+    """Annualized IR: `ann_active_return / ann_tracking_error`."""
     from ruin._internal.validate import align_benchmark
 
     r, b = align_benchmark(returns, benchmark)
@@ -160,24 +85,7 @@ def treynor_ratio(
     risk_free: float = 0.0,
     periods_per_year: float,
 ) -> float:
-    """Annualized Treynor ratio.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-    risk_free:
-        Per-period risk-free rate. Default 0.0.
-    periods_per_year:
-        Number of periods in a year.
-
-    Returns
-    -------
-    float
-        Treynor ratio = annualized_excess_return / beta.
-    """
+    """Annualized Treynor: `ann_excess_return / beta`."""
     from ruin._internal.validate import align_benchmark
     from ruin.market import beta as compute_beta
 
@@ -190,24 +98,9 @@ def treynor_ratio(
 
 
 def omega_ratio(returns: ReturnInput, *, threshold: float = 0.0) -> float:
-    """Omega ratio: probability-weighted gains over losses above a threshold.
+    """Omega: `sum(max(r - threshold, 0)) / sum(max(threshold - r, 0))`. NaN if no returns below threshold.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    threshold:
-        Minimum acceptable return. Default 0.0.
-
-    Returns
-    -------
-    float
-        Omega ratio = sum(max(r - threshold, 0)) / sum(max(threshold - r, 0)).
-        ``float('nan')`` if there are no returns below the threshold.
-
-    Notes
-    -----
-    Omega > 1 iff mean(r) > threshold (for any distribution with finite mean).
+    Omega > 1 iff `mean(r) > threshold` for any distribution with finite mean.
     """
     r = to_series(returns)
     require_minimum_length(r, 1, "omega_ratio")

@@ -18,27 +18,11 @@ ReturnInput = pl.Series | pl.Expr | np.ndarray | pl.DataFrame
 
 
 def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
-    """Coerce any supported input type to a Polars Series, dropping NaNs by default.
+    """Coerce any supported input to a Float64 pl.Series with NaN/null dropped.
 
-    Accepted input types:
-    - ``pl.Series``: used directly (NaNs dropped)
-    - ``pl.Expr``: evaluated against an empty context — raises ``TypeError``; expressions
-      must be used inside ``.select()`` / ``.with_columns()``.
-    - ``np.ndarray``: 1-D float array converted to Series
-    - ``pl.DataFrame``: single-column DataFrame is unwrapped; multi-column raises ``TypeError``
-
-    Parameters
-    ----------
-    returns:
-        The return data to coerce.
-    name:
-        Used in error messages.
-
-    Returns
-    -------
-    pl.Series
-        Float64 Series with NaN / null values dropped. Internal math stays in
-        Float64; callers cast the *result* to Float32 before returning to users.
+    pl.Expr raises — expressions must live inside `.select()` / `.with_columns()`. 1-D arrays
+    and single-column DataFrames are accepted; multi-column DataFrames raise. `name` is used
+    in error messages. Callers cast the *result* to Float32 before returning to users.
     """
     if isinstance(returns, pl.Expr):
         raise TypeError(
@@ -70,21 +54,9 @@ def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
 
 
 def to_dataframe(returns: ReturnInput, name: str = "returns") -> pl.DataFrame:
-    """Coerce any supported input type to a Polars DataFrame (one column per stream).
+    """Coerce any supported input to a Float64 pl.DataFrame with rows containing any NaN/null dropped.
 
-    For scalar / Series inputs, wraps in a single-column DataFrame.
-
-    Parameters
-    ----------
-    returns:
-        The return data to coerce.
-    name:
-        Used as column name when wrapping a Series/array.
-
-    Returns
-    -------
-    pl.DataFrame
-        All columns cast to Float64, NaN/null dropped per column (row-wise drop).
+    Scalar / Series inputs are wrapped in a single-column DataFrame named `name`.
     """
     if isinstance(returns, pl.DataFrame):
         df = returns.cast({col: INTERNAL_FLOAT_DTYPE for col in returns.columns})
@@ -109,7 +81,7 @@ def require_same_length(
 
 
 def require_minimum_length(s: pl.Series, min_len: int, metric_name: str = "metric") -> None:
-    """Raise ValueError if Series has fewer than *min_len* observations."""
+    """Raise ValueError if Series has fewer than `min_len` observations."""
     if len(s) < min_len:
         raise ValueError(f"'{metric_name}' requires at least {min_len} observations; got {len(s)}.")
 
@@ -121,10 +93,7 @@ def require_strictly_positive(value: float, param: str) -> None:
 
 
 def check_nan_strict(returns: ReturnInput, name: str = "returns") -> None:
-    """Raise ValueError if the input contains any NaN or null values (strict mode).
-
-    Use this when ``strict=True`` is passed to ``summary()``.
-    """
+    """Raise ValueError if input contains any NaN/null (used when `summary(strict=True)`)."""
     if isinstance(returns, pl.Series):
         n_nan = int(returns.is_nan().sum()) + int(returns.is_null().sum())
     elif isinstance(returns, np.ndarray):
@@ -145,18 +114,7 @@ def align_benchmark(
     returns: ReturnInput,
     benchmark: ReturnInput,
 ) -> tuple[pl.Series, pl.Series]:
-    """Align returns and benchmark into equal-length float64 Series.
-
-    Alignment rules:
-    - If both inputs are DataFrames with a shared time column, inner-join on it
-      (not yet implemented here — handled in market.py for DataFrame paths).
-    - Otherwise, require equal length and trust the caller.
-
-    Returns
-    -------
-    tuple[pl.Series, pl.Series]
-        (returns_series, benchmark_series) both cleaned and equal-length.
-    """
+    """Return `(r, b)` as equal-length Float64 Series. Trusts caller for order; requires equal length."""
     r = to_series(returns, name="returns")
     b = to_series(benchmark, name="benchmark")
     require_same_length(r, b)

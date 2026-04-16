@@ -1,12 +1,4 @@
-"""Tail risk metrics: Value at Risk and Conditional Value at Risk.
-
-Sign convention: VaR and CVaR are **positive loss magnitudes** (desk convention).
-A VaR of 0.02 means the portfolio is expected to lose at most 2% with the given
-confidence level.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation.
-"""
+"""Tail risk: VaR and CVaR. Returned as positive loss magnitudes (0.02 = "lose up to 2%"). NaNs dropped."""
 
 from __future__ import annotations
 
@@ -20,28 +12,10 @@ def value_at_risk(
     confidence: float = 0.95,
     method: str = "historical",
 ) -> float:
-    """Value at Risk at a given confidence level.
+    """Value at Risk at `confidence` in (0, 1), returned as a positive loss magnitude.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    confidence:
-        Confidence level in (0, 1). Default 0.95.
-    method:
-        ``"historical"`` (default): empirical quantile of the return distribution.
-        ``"parametric"``: Gaussian approximation using mean and std.
-
-    Returns
-    -------
-    float
-        VaR as a **positive** loss magnitude (desk convention).
-        E.g. 0.02 means "lose at most 2% with 95% confidence".
-
-    Notes
-    -----
-    Historical VaR at confidence=0.95 is the negative of the 5th percentile of returns.
-    Parametric VaR assumes normality and may underestimate fat-tailed losses.
+    `"historical"` (default): negative of the (1 - confidence) empirical quantile.
+    `"parametric"`: Gaussian approximation using sample mean/std; may underestimate fat tails.
     """
     if not 0.0 < confidence < 1.0:
         raise ValueError(f"'confidence' must be in (0, 1); got {confidence}")
@@ -66,28 +40,10 @@ def conditional_value_at_risk(
     confidence: float = 0.95,
     method: str = "historical",
 ) -> float:
-    """Conditional Value at Risk (Expected Shortfall) at a given confidence level.
+    """CVaR (Expected Shortfall) at `confidence`, as a positive loss magnitude.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    confidence:
-        Confidence level in (0, 1). Default 0.95.
-    method:
-        ``"historical"`` (default): mean of returns below the VaR threshold.
-        ``"parametric"``: Gaussian approximation.
-
-    Returns
-    -------
-    float
-        CVaR as a **positive** loss magnitude (desk convention).
-        E.g. 0.03 means "average loss in the worst (1 - confidence) scenarios is 3%".
-
-    Notes
-    -----
-    CVaR is coherent (sub-additive) unlike VaR. For fat-tailed return series,
-    historical CVaR is more conservative than the parametric version.
+    `"historical"`: mean of returns at or below the VaR threshold.
+    `"parametric"`: Gaussian approximation. Unlike VaR, CVaR is coherent (sub-additive).
     """
     if not 0.0 < confidence < 1.0:
         raise ValueError(f"'confidence' must be in (0, 1); got {confidence}")

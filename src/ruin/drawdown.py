@@ -1,9 +1,4 @@
-"""Drawdown metrics.
-
-Sign convention: drawdowns are non-positive floats. A 23% drawdown is ``-0.23``.
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation.
-"""
+"""Drawdown metrics. Drawdowns are non-positive (`-0.23` = 23% drawdown). NaNs dropped."""
 
 from __future__ import annotations
 
@@ -18,19 +13,7 @@ from ruin._internal.validate import (
 
 
 def drawdown_series(returns: ReturnInput) -> pl.Series:
-    """Compute the drawdown at each period relative to the prior high-water mark.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    pl.Series
-        Drawdown series aligned to input (after NaN removal), values in (-inf, 0].
-        Each value is ``wealth[t] / max(wealth[0..t]) - 1``.
-    """
+    """Drawdown at each period vs. prior high-water mark: `wealth[t] / cum_max(wealth) - 1`."""
     r = to_series(returns)
     require_minimum_length(r, 1, "drawdown_series")
     # Prepend initial wealth of 1.0 so the HWM starts at the investment date,
@@ -42,38 +25,13 @@ def drawdown_series(returns: ReturnInput) -> pl.Series:
 
 
 def max_drawdown(returns: ReturnInput) -> float:
-    """Maximum drawdown over the full return series.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    float
-        Maximum drawdown as a non-positive fraction (e.g. -0.23 = 23% drawdown).
-    """
+    """Maximum drawdown (non-positive fraction, e.g. -0.23 = 23%)."""
     dd = drawdown_series(returns)
     return float(dd.min())  # type: ignore[arg-type]
 
 
 def average_drawdown(returns: ReturnInput) -> float:
-    """Mean magnitude of distinct drawdown episodes.
-
-    A new episode begins each time the portfolio sets a new high-water mark.
-    The magnitude is taken as the trough value within each episode.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    float
-        Average trough drawdown across episodes (non-positive).
-    """
+    """Mean trough magnitude across distinct drawdown episodes. A new episode starts at each new HWM."""
     dd = drawdown_series(returns)
     if len(dd) == 0:
         return 0.0
@@ -105,18 +63,7 @@ def average_drawdown(returns: ReturnInput) -> float:
 
 
 def max_drawdown_duration(returns: ReturnInput) -> int:
-    """Longest consecutive run of periods spent underwater (below HWM).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    int
-        Length of the longest drawdown episode in periods.
-    """
+    """Longest consecutive run of periods spent underwater (in periods)."""
     dd = drawdown_series(returns)
     max_dur = 0
     current = 0
@@ -131,19 +78,7 @@ def max_drawdown_duration(returns: ReturnInput) -> int:
 
 
 def recovery_time(returns: ReturnInput) -> float:
-    """Periods from the max drawdown trough to the next new high-water mark.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    float
-        Number of periods from trough to recovery. ``float('nan')`` if the
-        portfolio has not recovered by the end of the series.
-    """
+    """Periods from the max-drawdown trough to the next new HWM. NaN if not recovered by series end."""
     r = to_series(returns)
     require_minimum_length(r, 1, "recovery_time")
     dd = drawdown_series(r)
@@ -165,35 +100,13 @@ def recovery_time(returns: ReturnInput) -> float:
 
 
 def time_underwater(returns: ReturnInput) -> int:
-    """Total number of periods spent below the high-water mark.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    int
-        Count of periods where drawdown < 0.
-    """
+    """Total number of periods spent below the HWM."""
     dd = drawdown_series(returns)
     return int((dd < 0.0).sum())
 
 
 def drawdown_start(returns: ReturnInput) -> int:
-    """Index of the peak immediately preceding the maximum drawdown.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    int
-        0-based index of the HWM peak before the deepest drawdown.
-    """
+    """0-based index of the HWM peak immediately preceding the maximum drawdown."""
     r = to_series(returns)
     require_minimum_length(r, 1, "drawdown_start")
     dd = drawdown_series(r)
@@ -214,18 +127,7 @@ def drawdown_start(returns: ReturnInput) -> int:
 
 
 def drawdown_end(returns: ReturnInput) -> int:
-    """Index of the trough of the maximum drawdown.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    int
-        0-based index of the deepest drawdown point.
-    """
+    """0-based index of the max-drawdown trough."""
     r = to_series(returns)
     require_minimum_length(r, 1, "drawdown_end")
     dd = drawdown_series(r)

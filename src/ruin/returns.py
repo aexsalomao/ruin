@@ -1,10 +1,4 @@
-"""Return computation functions.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame`` (one column
-per strategy). NaN values are dropped before computation.
-
-Sign convention: returns are dimensionless fractions (0.01 = 1%).
-"""
+"""Return computation. Inputs: pl.Series / np.ndarray / pl.DataFrame; NaNs dropped. Returns are fractions (0.01 = 1%)."""
 
 from __future__ import annotations
 
@@ -20,25 +14,7 @@ from ruin._internal.validate import (
 
 
 def from_prices(prices: ReturnInput, *, log: bool = False) -> pl.Series:
-    """Compute simple or log returns from a price series.
-
-    Parameters
-    ----------
-    prices:
-        Price series (must be positive and finite).
-    log:
-        If ``True``, compute log returns: ln(P_t / P_{t-1}).
-        If ``False`` (default), compute simple returns: P_t / P_{t-1} - 1.
-
-    Returns
-    -------
-    pl.Series
-        Return series of length ``len(prices) - 1``. NaNs dropped.
-
-    Notes
-    -----
-    The first element is always dropped (no return for the initial price).
-    """
+    """Simple (default) or log returns from a positive price series. Length is `len(prices) - 1`."""
     p = to_series(prices, name="prices")
     require_minimum_length(p, 2, "from_prices")
     if (p <= 0.0).any():
@@ -48,22 +24,7 @@ def from_prices(prices: ReturnInput, *, log: bool = False) -> pl.Series:
 
 
 def total_return(returns: ReturnInput) -> float:
-    """Compound all periodic returns into a single total return.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    float
-        Total compounded return. E.g. 0.25 means +25%.
-
-    Notes
-    -----
-    Computed as ``product(1 + r_i) - 1``.
-    """
+    """Compounded total return: `product(1 + r) - 1`."""
     r = to_series(returns)
     require_minimum_length(r, 1, "total_return")
     return float((1.0 + r).product()) - 1.0
@@ -75,22 +36,10 @@ def annualize_return(
     periods_per_year: float,
     method: str = "geometric",
 ) -> float:
-    """Annualize a return series.
+    """Annualize returns by "geometric" (default) or "arithmetic" method.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year (e.g. 252 for daily, 12 for monthly).
-    method:
-        ``"geometric"`` (default): ``(1 + total_return)^(periods_per_year / n) - 1``.
-        ``"arithmetic"``: ``mean(r) * periods_per_year``.
-
-    Returns
-    -------
-    float
-        Annualized return.
+    Geometric: `(1 + total)^(periods_per_year / n) - 1`. Returns NaN if total return <= -1 (ruin).
+    Arithmetic: `mean(r) * periods_per_year`.
     """
     r = to_series(returns)
     require_minimum_length(r, 1, "annualize_return")
@@ -109,18 +58,5 @@ def annualize_return(
 
 
 def cagr(returns: ReturnInput, *, periods_per_year: float) -> float:
-    """Compound annual growth rate — alias for geometric annualized return.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year (e.g. 252 for daily, 12 for monthly).
-
-    Returns
-    -------
-    float
-        CAGR as a decimal fraction (e.g. 0.12 = 12% per year).
-    """
+    """Compound annual growth rate — alias for geometric `annualize_return`."""
     return annualize_return(returns, periods_per_year=periods_per_year, method="geometric")

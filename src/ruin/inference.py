@@ -1,8 +1,4 @@
-"""Statistical inference for performance metrics.
-
-Critical for live performance tracking where sample sizes are small.
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-"""
+"""Statistical inference for performance metrics — critical for small live samples. NaNs dropped."""
 
 from __future__ import annotations
 
@@ -23,29 +19,11 @@ def sharpe_standard_error(
     *,
     periods_per_year: float,
 ) -> float:
-    """Lo (2002) autocorrelation-adjusted standard error of the Sharpe ratio.
+    """Lo (2002) autocorrelation-adjusted SE of the annualized Sharpe ratio.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year.
-
-    Returns
-    -------
-    float
-        Standard error of the annualized Sharpe ratio.
-
-    Notes
-    -----
-    From Lo (2002): "The Statistics of Sharpe Ratios," Financial Analysts Journal.
-    The formula accounts for first-order autocorrelation in returns:
-
-        SE(SR_annual) ≈ sqrt((1 + 2*rho_1 * SR_q^2/q) / T) * sqrt(q)
-
-    where q = periods_per_year and rho_1 is lag-1 autocorrelation.
-    In the iid case this reduces to sqrt(1/T).
+    Lo (2002), "The Statistics of Sharpe Ratios," Financial Analysts Journal:
+    `SE(SR_ann) ≈ sqrt((1 + 2*rho_1 * SR_q^2) / T) * sqrt(q)`, where `q = periods_per_year`
+    and `rho_1` is lag-1 autocorrelation. Reduces to `sqrt(q/T)` under i.i.d. returns.
     """
     r = to_series(returns)
     require_minimum_length(r, 4, "sharpe_standard_error")
@@ -69,22 +47,7 @@ def sharpe_confidence_interval(
     periods_per_year: float,
     confidence: float = 0.95,
 ) -> tuple[float, float]:
-    """Asymptotic confidence interval for the annualized Sharpe ratio.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year.
-    confidence:
-        Confidence level. Default 0.95.
-
-    Returns
-    -------
-    tuple[float, float]
-        (lower, upper) confidence interval bounds.
-    """
+    """Asymptotic `(lower, upper)` CI for the annualized Sharpe ratio."""
     from ruin.ratios import sharpe_ratio
 
     r = to_series(returns)
@@ -102,29 +65,10 @@ def bootstrap_metric(
     confidence: float = 0.95,
     seed: int | None = None,
 ) -> tuple[float, float, float]:
-    """Generic bootstrap for any scalar metric.
+    """Bootstrap CI for a scalar metric — returns `(point, lower, upper)`.
 
-    Resamples with replacement from *returns* and computes *fn* on each resample.
-
-    Parameters
-    ----------
-    fn:
-        A scalar metric function with signature ``fn(returns, **kwargs) -> float``.
-        Must accept a ``pl.Series`` as first argument.
-    returns:
-        Periodic return series. NaNs are dropped before bootstrapping.
-    n_samples:
-        Number of bootstrap replicates. Default 1000.
-    confidence:
-        Confidence level for the interval. Default 0.95.
-    seed:
-        Random seed for reproducibility.
-
-    Returns
-    -------
-    tuple[float, float, float]
-        ``(point_estimate, lower, upper)`` where *point_estimate* is ``fn(returns)``
-        evaluated on the original data, and *lower*/*upper* are the bootstrap CI bounds.
+    Resamples `returns` with replacement and computes `fn(resample)` each time. `fn` must
+    accept a pl.Series as first argument. `point` is `fn(returns)` on the original data.
     """
     r = to_series(returns)
     require_minimum_length(r, 2, "bootstrap_metric")

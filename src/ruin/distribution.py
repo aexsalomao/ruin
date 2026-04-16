@@ -1,8 +1,4 @@
-"""Return distribution shape metrics.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation.
-"""
+"""Return distribution shape metrics. NaNs dropped."""
 
 from __future__ import annotations
 
@@ -24,36 +20,17 @@ __all__ = [
 
 @dataclass(frozen=True)
 class JarqueBeraResult:
-    """Result of the Jarque-Bera normality test.
-
-    Attributes
-    ----------
-    statistic:
-        JB test statistic. Larger values indicate greater departure from normality.
-    p_value:
-        Asymptotic p-value under the null of normality (chi-squared with 2 d.f.).
-    """
+    """Jarque-Bera result. `statistic` is the JB value; `p_value` is the asymptotic chi2(2) p-value."""
 
     statistic: float
     p_value: float
 
 
 def skewness(returns: ReturnInput, *, bias: bool = False) -> float:
-    """Third standardized moment (skewness) of the return distribution.
+    """Skewness (third standardized moment). Negative = left-skewed; zero = symmetric.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    bias:
-        If ``False`` (default), compute the bias-corrected (unbiased) skewness
-        using the Fisher-Pearson correction: ``n*(n+1)/((n-1)*(n-2)) * sum((r-mean)^3/std^3)``.
-        If ``True``, return the biased (population) estimator: ``mean((r-mean)^3) / std^3``.
-
-    Returns
-    -------
-    float
-        Skewness. Zero for a symmetric distribution; negative for left-skewed.
+    `bias=False` (default): Fisher-Pearson unbiased (SAS/SPSS convention).
+    `bias=True`: biased population estimator `mean((r-mean)^3) / std^3`.
     """
     r = to_series(returns)
     require_minimum_length(r, 3, "skewness")
@@ -74,22 +51,10 @@ def skewness(returns: ReturnInput, *, bias: bool = False) -> float:
 
 
 def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
-    """Excess (Fisher) kurtosis of the return distribution.
+    """Excess (Fisher) kurtosis. Normal = 0; positive = fatter tails.
 
-    Normal distribution has excess kurtosis = 0.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    bias:
-        If ``False`` (default), apply the unbiased (excess) kurtosis correction.
-        If ``True``, return biased population estimator minus 3.
-
-    Returns
-    -------
-    float
-        Excess kurtosis. Positive (leptokurtic) means fatter tails than normal.
+    `bias=False` (default): unbiased Fisher correction (Excel KURT convention).
+    `bias=True`: biased `mean((r-mean)^4) / std^4 - 3`.
     """
     r = to_series(returns)
     require_minimum_length(r, 4, "excess_kurtosis")
@@ -111,25 +76,9 @@ def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
 
 
 def jarque_bera(returns: ReturnInput) -> JarqueBeraResult:
-    """Jarque-Bera test for normality of the return distribution.
+    """Jarque-Bera normality test. `JB = n/6 * (S^2 + K^2/4)`; asymptotic chi2(2) under the null.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-
-    Returns
-    -------
-    JarqueBeraResult
-        Frozen dataclass with ``statistic`` and ``p_value``.
-
-    Notes
-    -----
-    JB = n/6 * (S^2 + K^2/4) where S is biased skewness and K is biased excess kurtosis.
-    Asymptotically chi-squared with 2 d.f. under the null of normality.
-    Uses ``statistics.NormalDist`` (via chi-squared CDF approximation) — no SciPy needed
-    for the chi-squared CDF. We implement the chi-squared CDF via the regularized
-    incomplete gamma function approximation from the standard library.
+    Uses the exact chi2(2) CDF (`1 - exp(-x/2)`) — no SciPy needed.
     """
     r = to_series(returns)
     require_minimum_length(r, 8, "jarque_bera")
@@ -146,25 +95,10 @@ def jarque_bera(returns: ReturnInput) -> JarqueBeraResult:
 
 
 def autocorrelation(returns: ReturnInput, *, lag: int = 1) -> float:
-    """Lag-k serial autocorrelation of the return series.
+    """Lag-`k` serial autocorrelation: `corr(r[t], r[t - lag])`.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    lag:
-        Lag in periods. Default 1 (first-order autocorrelation).
-
-    Returns
-    -------
-    float
-        Pearson correlation between ``r[t]`` and ``r[t - lag]``.
-
-    Notes
-    -----
-    Positive autocorrelation in returns may indicate smoothed/stale pricing or
-    momentum effects. It also invalidates the sqrt-of-time annualization formula
-    used by ``ruin.volatility.annualize_volatility``.
+    Positive autocorrelation may indicate stale pricing or momentum and invalidates sqrt-of-time
+    annualization used by `ruin.volatility.annualize_volatility`.
     """
     r = to_series(returns)
     require_minimum_length(r, lag + 2, "autocorrelation")

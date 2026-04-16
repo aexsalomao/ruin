@@ -1,9 +1,4 @@
-"""Benchmark-relative market metrics.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation. When both inputs are bare Series/arrays,
-equal length is required and the caller is trusted for alignment.
-"""
+"""Benchmark-relative market metrics. NaNs dropped; bare Series/arrays must already be aligned."""
 
 from __future__ import annotations
 
@@ -13,20 +8,7 @@ from ruin._internal.validate import ReturnInput, align_benchmark, require_minimu
 
 
 def beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Market beta: covariance(returns, benchmark) / variance(benchmark).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Beta coefficient. ``float('nan')`` if benchmark variance is zero.
-    """
+    """Market beta: `cov(r, b) / var(b)`. NaN if benchmark variance is zero."""
     r, b = align_benchmark(returns, benchmark)
     require_minimum_length(r, 2, "beta")
     var_b = float(b.var(ddof=1))  # type: ignore[arg-type]
@@ -36,7 +18,7 @@ def beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def _cov_manual(a: pl.Series, b: pl.Series, ddof: int = 1) -> float:
-    """Compute covariance without relying on Polars cov method for filtered subsets."""
+    """Covariance without relying on Polars cov() for filtered subsets."""
     n = len(a)
     if n - ddof <= 0:
         return float("nan")
@@ -46,21 +28,7 @@ def _cov_manual(a: pl.Series, b: pl.Series, ddof: int = 1) -> float:
 
 
 def downside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Beta computed only on periods where the benchmark return is negative.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Downside beta. ``float('nan')`` if no negative benchmark periods or
-        benchmark variance is zero in that subset.
-    """
+    """Beta computed only on periods where benchmark return < 0. NaN if no such periods or zero variance."""
     r, b = align_benchmark(returns, benchmark)
     mask = b < 0.0
     r_down = r.filter(mask)
@@ -75,21 +43,7 @@ def downside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def upside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Beta computed only on periods where the benchmark return is positive.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Upside beta. ``float('nan')`` if no positive benchmark periods or
-        benchmark variance is zero in that subset.
-    """
+    """Beta computed only on periods where benchmark return > 0. NaN if no such periods or zero variance."""
     r, b = align_benchmark(returns, benchmark)
     mask = b > 0.0
     r_up = r.filter(mask)
@@ -110,24 +64,7 @@ def alpha(
     risk_free: float = 0.0,
     periods_per_year: float,
 ) -> float:
-    """Annualized Jensen's alpha.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-    risk_free:
-        Per-period risk-free rate. Default 0.0.
-    periods_per_year:
-        Number of periods in a year for annualization.
-
-    Returns
-    -------
-    float
-        Annualized alpha = annualized(r_excess) - beta * annualized(b_excess).
-    """
+    """Annualized Jensen's alpha: `ann(r_excess) - beta * ann(b_excess)`."""
     r, b = align_benchmark(returns, benchmark)
     beta_val = beta(r, b)
     r_excess = r - risk_free
@@ -144,44 +81,14 @@ def tracking_error(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized tracking error (std of active returns).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-    periods_per_year:
-        Number of periods in a year.
-    ddof:
-        Delta degrees of freedom. Default 1.
-
-    Returns
-    -------
-    float
-        Annualized standard deviation of (returns - benchmark).
-    """
+    """Annualized std of active returns (`returns - benchmark`)."""
     r, b = align_benchmark(returns, benchmark)
     active = r - b
     return float(active.std(ddof=ddof)) * (periods_per_year**0.5)  # type: ignore[arg-type]
 
 
 def correlation(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Pearson correlation between returns and benchmark.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Pearson correlation coefficient in [-1, 1].
-    """
+    """Pearson correlation in [-1, 1]."""
     r, b = align_benchmark(returns, benchmark)
     require_minimum_length(r, 2, "correlation")
     df = pl.DataFrame({"r": r, "b": b})
@@ -189,22 +96,7 @@ def correlation(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def up_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Up-market capture ratio (geometric compounding).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Compounded return of strategy during benchmark-up periods divided by
-        compounded benchmark return during those periods.
-        ``float('nan')`` if no up periods.
-    """
+    """Up-market capture (geometric): strategy compounded return / benchmark compounded return, over b > 0 periods."""
     r, b = align_benchmark(returns, benchmark)
     mask = b > 0.0
     r_up = r.filter(mask)
@@ -219,22 +111,7 @@ def up_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def down_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Down-market capture ratio (geometric compounding).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    benchmark:
-        Benchmark return series. Must be same length after NaN removal.
-
-    Returns
-    -------
-    float
-        Compounded return of strategy during benchmark-down periods divided by
-        compounded benchmark return during those periods.
-        ``float('nan')`` if no down periods.
-    """
+    """Down-market capture (geometric): strategy compounded return / benchmark compounded return, over b < 0 periods."""
     r, b = align_benchmark(returns, benchmark)
     mask = b < 0.0
     r_down = r.filter(mask)

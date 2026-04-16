@@ -1,8 +1,4 @@
-"""Volatility and dispersion measures.
-
-All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
-NaN values are dropped before computation.
-"""
+"""Volatility and dispersion measures. Inputs: pl.Series / np.ndarray / pl.DataFrame; NaNs dropped."""
 
 from __future__ import annotations
 
@@ -10,20 +6,7 @@ from ruin._internal.validate import ReturnInput, require_minimum_length, to_seri
 
 
 def volatility(returns: ReturnInput, *, ddof: int = 1) -> float:
-    """Standard deviation of returns (periodic, not annualized).
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    ddof:
-        Delta degrees of freedom. Default 1 (sample std).
-
-    Returns
-    -------
-    float
-        Periodic standard deviation.
-    """
+    """Periodic standard deviation of returns (not annualized). `ddof=1` is sample std."""
     r = to_series(returns)
     require_minimum_length(r, ddof + 1, "volatility")
     return float(r.std(ddof=ddof))  # type: ignore[arg-type]
@@ -35,27 +18,7 @@ def annualize_volatility(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized volatility using the square-root-of-time rule.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    periods_per_year:
-        Number of periods in a year (e.g. 252 for daily, 12 for monthly).
-    ddof:
-        Delta degrees of freedom for std. Default 1 (sample std).
-
-    Returns
-    -------
-    float
-        Annualized standard deviation.
-
-    Notes
-    -----
-    Assumes i.i.d. returns. The sqrt-of-time rule breaks down when returns
-    have significant autocorrelation; see ``ruin.distribution.autocorrelation``.
-    """
+    """Annualized volatility via sqrt-of-time. Assumes i.i.d. returns; breaks under autocorrelation."""
     if periods_per_year <= 0:
         raise ValueError(f"'periods_per_year' must be positive; got {periods_per_year}")
     return volatility(returns, ddof=ddof) * (periods_per_year**0.5)
@@ -67,28 +30,10 @@ def downside_deviation(
     threshold: float = 0.0,
     ddof: int = 0,
 ) -> float:
-    """Semi-standard deviation of returns below a threshold.
+    """Semi-std of returns below `threshold` (MAR). Denominator counts all periods (Sortino convention).
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    threshold:
-        Minimum acceptable return (MAR). Default 0.0.
-    ddof:
-        Delta degrees of freedom. Default 0 (population std of downside returns).
-
-    Returns
-    -------
-    float
-        Downside deviation (periodic).
-
-    Notes
-    -----
-    Only periods where ``r < threshold`` contribute. Periods at or above the
-    threshold contribute zero to the sum of squared deviations but are included
-    in the denominator (Sortino/Upside Potential convention). If you want the
-    denominator to be only downside observations, use ``semi_deviation``.
+    Only `r < threshold` contributes to the sum of squared deviations, but all periods are in the
+    denominator. Use `semi_deviation` if you want the denominator restricted to downside obs.
     """
     r = to_series(returns)
     require_minimum_length(r, 1, "downside_deviation")
@@ -101,23 +46,7 @@ def downside_deviation(
 
 
 def semi_deviation(returns: ReturnInput, *, ddof: int = 0) -> float:
-    """Standard deviation of negative returns only.
-
-    Unlike ``downside_deviation``, only periods with ``r < 0`` contribute to
-    both numerator *and* denominator.
-
-    Parameters
-    ----------
-    returns:
-        Periodic return series. NaNs are dropped.
-    ddof:
-        Delta degrees of freedom. Default 0 (population std of negative returns).
-
-    Returns
-    -------
-    float
-        Standard deviation of the negative-return subset.
-    """
+    """Std of negative returns only — both numerator and denominator restricted to `r < 0`."""
     r = to_series(returns)
     negative = r.filter(r < 0.0)
     if len(negative) == 0:

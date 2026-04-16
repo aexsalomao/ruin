@@ -1,9 +1,4 @@
-"""Summary report — the single allowed bundling function.
-
-``summary()`` composes all scalar building blocks into a Polars DataFrame.
-It is implemented as pure composition: every metric is a direct call to
-a module-level function. No private logic, no metrics that only exist here.
-"""
+"""Summary report — the single allowed bundling function. Pure composition of module-level metrics."""
 
 from __future__ import annotations
 
@@ -61,33 +56,10 @@ def summary(
     periods_per_year: float,
     strict: bool = False,
 ) -> pl.DataFrame:
-    """Compute every scalar metric and return a Polars DataFrame.
+    """Every scalar metric as a Polars DataFrame — one row per return stream.
 
-    Parameters
-    ----------
-    returns:
-        Periodic return series or DataFrame (one column per strategy).
-        For DataFrame input of N columns, returns N rows — one per strategy.
-    benchmark:
-        Optional benchmark return series. When provided, benchmark-relative
-        metrics (alpha, beta, tracking error, etc.) are included.
-    risk_free:
-        Per-period risk-free rate. Default 0.0.
-    periods_per_year:
-        Number of periods in a year. Must be specified explicitly.
-    strict:
-        If ``True``, raise ``ValueError`` on NaN/null input instead of dropping.
-
-    Returns
-    -------
-    pl.DataFrame
-        One row per return stream. Columns are metric names. Benchmark-relative
-        columns are ``null`` when no benchmark is provided.
-
-    Notes
-    -----
-    Implemented as pure composition: read the source to see the exact calls.
-    Raises ``ValueError`` if ``strict=True`` and the input contains NaNs.
+    DataFrame input produces one row per column. Benchmark-relative columns (alpha, beta, etc.)
+    are null when no benchmark is given. `strict=True` raises on NaN/null input instead of dropping.
     """
     if strict:
         check_nan_strict(returns)
@@ -123,7 +95,7 @@ def summary(
 
 
 def _cast_float_columns(df: pl.DataFrame) -> pl.DataFrame:
-    """Downcast every Float64 column to the public FLOAT_DTYPE (Float32)."""
+    """Downcast Float64 columns to public FLOAT_DTYPE (Float32)."""
     float_cols = {
         col: FLOAT_DTYPE
         for col, dtype in zip(df.columns, df.dtypes, strict=True)
@@ -133,12 +105,7 @@ def _cast_float_columns(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _safe(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Call ``fn``; return NaN on expected numerical failures.
-
-    Only catches exceptions that indicate "metric is undefined for this input"
-    (e.g. too few observations, zero variance). Unexpected errors propagate so
-    bugs are not silently masked in production reports.
-    """
+    """Call `fn`; return NaN on "metric undefined" errors (too few obs, zero variance). Other errors propagate."""
     try:
         result = fn(*args, **kwargs)
     except (ValueError, ZeroDivisionError):
@@ -156,7 +123,7 @@ def _compute_row(
     periods_per_year: float,
     col_name: str = "returns",
 ) -> dict[str, Any]:
-    """Compute all metrics for a single return stream."""
+    """All metrics for one return stream as a `{name: value}` dict."""
     row: dict[str, Any] = {"name": col_name}
 
     # Returns
