@@ -6,6 +6,7 @@ All functions accept ``pl.Series``, ``np.ndarray``, or ``pl.DataFrame``.
 
 from __future__ import annotations
 
+import contextlib
 import math
 from collections.abc import Callable
 
@@ -135,10 +136,8 @@ def bootstrap_metric(
     for _ in range(n_samples):
         sample = rng.choice(arr, size=n, replace=True)
         s = pl.Series("r", sample, dtype=pl.Float64)
-        try:
+        with contextlib.suppress(Exception):
             estimates.append(fn(s))
-        except Exception:
-            pass
     if not estimates:
         return (point, float("nan"), float("nan"))
     estimates.sort()

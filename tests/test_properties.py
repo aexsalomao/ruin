@@ -111,9 +111,7 @@ def test_omega_ratio_gt_one_iff_positive_mean(returns: list[float]) -> None:
     constant=st.floats(min_value=-0.05, max_value=0.05, allow_nan=False),
 )
 @settings(max_examples=50)
-def test_hit_rate_invariant_to_common_shift(
-    returns: list[float], constant: float
-) -> None:
+def test_hit_rate_invariant_to_common_shift(returns: list[float], constant: float) -> None:
     """Shifting both returns and threshold by the same constant preserves hit_rate."""
     from ruin.activity import hit_rate
 

@@ -145,9 +145,9 @@ def rolling_downside_deviation(
     """
     s = _ensure_series(returns)
     downside = (s - threshold).clip(upper_bound=0.0)
-    out = (downside**2).rolling_mean(
-        window_size=window, min_samples=_mp(min_periods, window)
-    ).sqrt()
+    out = (
+        (downside**2).rolling_mean(window_size=window, min_samples=_mp(min_periods, window)).sqrt()
+    )
     return out.cast(FLOAT_DTYPE).rename("rolling_downside_deviation")
 
 
@@ -266,9 +266,7 @@ def rolling_beta(
     _require_int_window(window, "rolling_beta")
     mp = _mp(min_periods, window)
     df = pl.DataFrame({"r": r, "b": b})
-    roll_cov = df.select(
-        pl.rolling_cov("r", "b", window_size=window, min_samples=mp)
-    ).to_series()
+    roll_cov = df.select(pl.rolling_cov("r", "b", window_size=window, min_samples=mp)).to_series()
     roll_var = df["b"].rolling_var(window_size=window, min_samples=mp)
     return (roll_cov / roll_var).cast(FLOAT_DTYPE).rename("rolling_beta")
 
@@ -304,9 +302,7 @@ def rolling_correlation(
     _require_int_window(window, "rolling_correlation")
     mp = _mp(min_periods, window)
     df = pl.DataFrame({"r": r, "b": b})
-    out = df.select(
-        pl.rolling_corr("r", "b", window_size=window, min_samples=mp)
-    ).to_series()
+    out = df.select(pl.rolling_corr("r", "b", window_size=window, min_samples=mp)).to_series()
     return out.cast(FLOAT_DTYPE).rename("rolling_correlation")
 
 

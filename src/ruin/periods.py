@@ -36,10 +36,10 @@ def mtd(
     ref = as_of or datetime.date.today()
     month_start = ref.replace(day=1)
     if isinstance(returns, pl.Series):
-        mask = (returns >= month_start) & (returns <= ref)
-        return returns.filter(mask)
-    mask = (pl.col(date_col) >= month_start) & (pl.col(date_col) <= ref)
-    return returns.filter(mask)
+        series_mask = (returns >= month_start) & (returns <= ref)
+        return returns.filter(series_mask)
+    expr_mask = (pl.col(date_col) >= month_start) & (pl.col(date_col) <= ref)
+    return returns.filter(expr_mask)
 
 
 def qtd(
@@ -68,10 +68,10 @@ def qtd(
     quarter_start_month = ((ref.month - 1) // 3) * 3 + 1
     quarter_start = ref.replace(month=quarter_start_month, day=1)
     if isinstance(returns, pl.Series):
-        mask = (returns >= quarter_start) & (returns <= ref)
-        return returns.filter(mask)
-    mask = (pl.col(date_col) >= quarter_start) & (pl.col(date_col) <= ref)
-    return returns.filter(mask)
+        series_mask = (returns >= quarter_start) & (returns <= ref)
+        return returns.filter(series_mask)
+    expr_mask = (pl.col(date_col) >= quarter_start) & (pl.col(date_col) <= ref)
+    return returns.filter(expr_mask)
 
 
 def ytd(
@@ -99,10 +99,10 @@ def ytd(
     ref = as_of or datetime.date.today()
     year_start = ref.replace(month=1, day=1)
     if isinstance(returns, pl.Series):
-        mask = (returns >= year_start) & (returns <= ref)
-        return returns.filter(mask)
-    mask = (pl.col(date_col) >= year_start) & (pl.col(date_col) <= ref)
-    return returns.filter(mask)
+        series_mask = (returns >= year_start) & (returns <= ref)
+        return returns.filter(series_mask)
+    expr_mask = (pl.col(date_col) >= year_start) & (pl.col(date_col) <= ref)
+    return returns.filter(expr_mask)
 
 
 def trailing(
@@ -180,8 +180,7 @@ def periods_per_year_for(frequency: str) -> int:
     key = frequency.upper()
     if key not in _FREQUENCY_PERIODS:
         raise ValueError(
-            f"Unknown frequency '{frequency}'. "
-            f"Valid options: {list(_FREQUENCY_PERIODS.keys())}"
+            f"Unknown frequency '{frequency}'. Valid options: {list(_FREQUENCY_PERIODS.keys())}"
         )
     return _FREQUENCY_PERIODS[key]
 

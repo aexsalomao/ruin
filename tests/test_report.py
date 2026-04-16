@@ -28,9 +28,7 @@ class TestSummary:
         assert df["max_drawdown"].dtype == pl.Float32
         assert df["cagr"].dtype == pl.Float32
 
-    def test_benchmark_columns_null_without_benchmark(
-        self, daily_returns: pl.Series
-    ) -> None:
+    def test_benchmark_columns_null_without_benchmark(self, daily_returns: pl.Series) -> None:
         df = summary(daily_returns, periods_per_year=252)
         assert df["beta"][0] is None
 
@@ -54,9 +52,7 @@ class TestSummary:
         with pytest.raises(ValueError, match="strict"):
             summary(r, periods_per_year=252, strict=True)
 
-    def test_strict_mode_raises_on_benchmark_nan(
-        self, daily_returns: pl.Series
-    ) -> None:
+    def test_strict_mode_raises_on_benchmark_nan(self, daily_returns: pl.Series) -> None:
         b = pl.Series([float("nan")] + [0.0] * (len(daily_returns) - 1))
         with pytest.raises(ValueError, match="strict"):
             summary(daily_returns, b, periods_per_year=252, strict=True)
@@ -68,10 +64,6 @@ class TestSummary:
         assert not math.isnan(df["cagr"][0])
 
     def test_summary_risk_free_affects_sharpe(self, daily_returns: pl.Series) -> None:
-        sr_zero = summary(daily_returns, periods_per_year=252, risk_free=0.0)[
-            "sharpe_ratio"
-        ][0]
-        sr_high = summary(daily_returns, periods_per_year=252, risk_free=0.0005)[
-            "sharpe_ratio"
-        ][0]
+        sr_zero = summary(daily_returns, periods_per_year=252, risk_free=0.0)["sharpe_ratio"][0]
+        sr_high = summary(daily_returns, periods_per_year=252, risk_free=0.0005)["sharpe_ratio"][0]
         assert sr_high < sr_zero

@@ -107,9 +107,7 @@ class TestTreynorRatio:
         tr = treynor_ratio(r, b, periods_per_year=252)
         assert isinstance(tr, float)
 
-    def test_float_output(
-        self, daily_returns: pl.Series, benchmark_returns: pl.Series
-    ) -> None:
+    def test_float_output(self, daily_returns: pl.Series, benchmark_returns: pl.Series) -> None:
         tr = treynor_ratio(daily_returns, benchmark_returns, periods_per_year=252)
         assert isinstance(tr, float)
 

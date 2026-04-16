@@ -48,9 +48,7 @@ class TestSharpeCI:
         sr = sharpe_ratio(daily_returns, periods_per_year=252)
         assert lo <= sr <= hi
 
-    def test_wider_ci_for_lower_confidence_is_wrong_way(
-        self, daily_returns: pl.Series
-    ) -> None:
+    def test_wider_ci_for_lower_confidence_is_wrong_way(self, daily_returns: pl.Series) -> None:
         # Higher confidence requires wider CI.
         lo95, hi95 = sharpe_confidence_interval(
             daily_returns, periods_per_year=252, confidence=0.95

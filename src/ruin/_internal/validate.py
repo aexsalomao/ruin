@@ -6,12 +6,12 @@ import numpy as np
 import polars as pl
 
 # Public float dtype for all Polars outputs.
-FLOAT_DTYPE: pl.DataType = pl.Float32
+FLOAT_DTYPE: type[pl.DataType] = pl.Float32
 
 # Internal float dtype used during computation. Float64 avoids catastrophic
 # cancellation in cum_prod / variance-style accumulators; results are cast to
 # FLOAT_DTYPE at the boundary of each public function.
-INTERNAL_FLOAT_DTYPE: pl.DataType = pl.Float64
+INTERNAL_FLOAT_DTYPE: type[pl.DataType] = pl.Float64
 
 # Type alias for inputs accepted by all public functions.
 ReturnInput = pl.Series | pl.Expr | np.ndarray | pl.DataFrame
@@ -103,16 +103,15 @@ def require_same_length(
     """Raise ValueError if two Series have different lengths."""
     if len(a) != len(b):
         raise ValueError(
-            f"'{name_a}' (length {len(a)}) and '{name_b}' (length {len(b)}) must have the same length."
+            f"'{name_a}' (length {len(a)}) and '{name_b}' (length {len(b)}) "
+            f"must have the same length."
         )
 
 
 def require_minimum_length(s: pl.Series, min_len: int, metric_name: str = "metric") -> None:
     """Raise ValueError if Series has fewer than *min_len* observations."""
     if len(s) < min_len:
-        raise ValueError(
-            f"'{metric_name}' requires at least {min_len} observations; got {len(s)}."
-        )
+        raise ValueError(f"'{metric_name}' requires at least {min_len} observations; got {len(s)}.")
 
 
 def require_strictly_positive(value: float, param: str) -> None:
@@ -127,21 +126,19 @@ def check_nan_strict(returns: ReturnInput, name: str = "returns") -> None:
     Use this when ``strict=True`` is passed to ``summary()``.
     """
     if isinstance(returns, pl.Series):
-        n_nan = returns.is_nan().sum() + returns.is_null().sum()
+        n_nan = int(returns.is_nan().sum()) + int(returns.is_null().sum())
     elif isinstance(returns, np.ndarray):
         n_nan = int(np.isnan(returns).sum())
     elif isinstance(returns, pl.DataFrame):
         n_nan = sum(
-            returns[col].is_nan().sum() + returns[col].is_null().sum()
+            int(returns[col].is_nan().sum()) + int(returns[col].is_null().sum())
             for col in returns.columns
         )
     else:
         raise TypeError(f"Unsupported type for NaN check: {type(returns).__name__}")
 
     if n_nan > 0:
-        raise ValueError(
-            f"'{name}' contains {n_nan} NaN/null value(s) and strict=True was set."
-        )
+        raise ValueError(f"'{name}' contains {n_nan} NaN/null value(s) and strict=True was set.")
 
 
 def align_benchmark(

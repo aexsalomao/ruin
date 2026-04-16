@@ -168,9 +168,7 @@ def _compute_row(
 
     # Volatility
     row["volatility"] = _safe(volatility, r)
-    row["annualized_volatility"] = _safe(
-        annualize_volatility, r, periods_per_year=periods_per_year
-    )
+    row["annualized_volatility"] = _safe(annualize_volatility, r, periods_per_year=periods_per_year)
     row["downside_deviation"] = _safe(downside_deviation, r, threshold=risk_free)
 
     # Drawdown
@@ -224,12 +222,8 @@ def _compute_row(
         row["beta"] = _safe(beta, r, b)
         row["alpha"] = _safe(alpha, r, b, risk_free=risk_free, periods_per_year=periods_per_year)
         row["correlation"] = _safe(correlation, r, b)
-        row["tracking_error"] = _safe(
-            tracking_error, r, b, periods_per_year=periods_per_year
-        )
-        row["information_ratio"] = _safe(
-            information_ratio, r, b, periods_per_year=periods_per_year
-        )
+        row["tracking_error"] = _safe(tracking_error, r, b, periods_per_year=periods_per_year)
+        row["information_ratio"] = _safe(information_ratio, r, b, periods_per_year=periods_per_year)
         row["treynor_ratio"] = _safe(
             treynor_ratio, r, b, risk_free=risk_free, periods_per_year=periods_per_year
         )
@@ -237,8 +231,14 @@ def _compute_row(
         row["down_capture"] = _safe(down_capture, r, b)
     else:
         for col in [
-            "beta", "alpha", "correlation", "tracking_error",
-            "information_ratio", "treynor_ratio", "up_capture", "down_capture",
+            "beta",
+            "alpha",
+            "correlation",
+            "tracking_error",
+            "information_ratio",
+            "treynor_ratio",
+            "up_capture",
+            "down_capture",
         ]:
             row[col] = None
 

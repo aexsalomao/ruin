@@ -37,9 +37,7 @@ class TestVolatility:
 
     def test_numpy_input(self) -> None:
         arr = np.array([0.01, -0.01, 0.02, -0.02])
-        assert math.isclose(
-            volatility(arr), float(pl.Series(arr).std(ddof=1)), rel_tol=1e-9
-        )
+        assert math.isclose(volatility(arr), float(pl.Series(arr).std(ddof=1)), rel_tol=1e-9)
 
     def test_scale_invariance(self) -> None:
         r = pl.Series([0.01, -0.01, 0.02, -0.02])

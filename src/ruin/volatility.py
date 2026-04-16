@@ -6,8 +6,6 @@ NaN values are dropped before computation.
 
 from __future__ import annotations
 
-import polars as pl
-
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 
 
@@ -125,7 +123,5 @@ def semi_deviation(returns: ReturnInput, *, ddof: int = 0) -> float:
     if len(negative) == 0:
         return 0.0
     if len(negative) - ddof <= 0:
-        raise ValueError(
-            f"Not enough negative observations for ddof={ddof}; got {len(negative)}."
-        )
+        raise ValueError(f"Not enough negative observations for ddof={ddof}; got {len(negative)}.")
     return float(negative.std(ddof=ddof))  # type: ignore[arg-type]

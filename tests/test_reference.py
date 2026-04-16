@@ -20,7 +20,6 @@ from ruin.tail import value_at_risk
 from ruin.volatility import volatility
 from tests.conftest import FLOAT32_ABS_TOL, FLOAT32_REL_TOL
 
-
 SIMPLE_RETURNS = pl.Series(
     "returns",
     [0.01, -0.02, 0.03, -0.01, 0.02, 0.01, -0.03, 0.02, 0.01, -0.01],
@@ -71,9 +70,7 @@ class TestHandComputedRatios:
 
 class TestHandComputedTail:
     def test_historical_var_exact(self) -> None:
-        r = pl.Series(
-            [-0.05, -0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05]
-        )
+        r = pl.Series([-0.05, -0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05])
         var = value_at_risk(r, confidence=0.95)
         assert var > 0.0
         assert var <= 0.05

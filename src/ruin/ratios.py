@@ -6,12 +6,10 @@ NaN values are dropped before computation.
 
 from __future__ import annotations
 
-import polars as pl
-
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 from ruin.drawdown import max_drawdown
 from ruin.returns import annualize_return
-from ruin.volatility import annualize_volatility, downside_deviation
+from ruin.volatility import downside_deviation
 
 
 def sharpe_ratio(

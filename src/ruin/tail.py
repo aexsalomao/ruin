@@ -10,8 +10,6 @@ NaN values are dropped before computation.
 
 from __future__ import annotations
 
-import polars as pl
-
 from ruin._internal.normal import norm_ppf
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 

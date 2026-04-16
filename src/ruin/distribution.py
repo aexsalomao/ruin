@@ -105,9 +105,8 @@ def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
     # Unbiased (Fisher) excess kurtosis (SAS/SPSS/Excel KURT convention):
     # (n*(n+1)) / ((n-1)*(n-2)*(n-3)) * sum(z**4) - 3*(n-1)**2 / ((n-2)*(n-3))
     sum_quad = float(quad.sum())
-    return (
-        n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * sum_quad
-        - 3.0 * (n - 1) ** 2 / ((n - 2) * (n - 3))
+    return n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * sum_quad - 3.0 * (n - 1) ** 2 / (
+        (n - 2) * (n - 3)
     )
 
 

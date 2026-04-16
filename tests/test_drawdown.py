@@ -6,7 +6,6 @@ import math
 
 import numpy as np
 import polars as pl
-import pytest
 
 from ruin.drawdown import (
     average_drawdown,

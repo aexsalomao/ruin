@@ -43,10 +43,7 @@ def from_prices(prices: ReturnInput, *, log: bool = False) -> pl.Series:
     require_minimum_length(p, 2, "from_prices")
     if (p <= 0.0).any():
         raise ValueError("'prices' must be strictly positive for return computation.")
-    if log:
-        r = (p / p.shift(1)).log()
-    else:
-        r = p / p.shift(1) - 1.0
+    r = (p / p.shift(1)).log() if log else p / p.shift(1) - 1.0
     return r.drop_nulls().drop_nans().cast(FLOAT_DTYPE).rename("returns")
 
 

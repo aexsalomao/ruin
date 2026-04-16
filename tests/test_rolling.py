@@ -62,9 +62,7 @@ class TestRollingBeta:
 
     def test_length_mismatch_raises(self) -> None:
         with pytest.raises(ValueError):
-            ruin.rolling_beta(
-                pl.Series([0.01, 0.02]), pl.Series([0.01, 0.02, 0.03]), window=2
-            )
+            ruin.rolling_beta(pl.Series([0.01, 0.02]), pl.Series([0.01, 0.02, 0.03]), window=2)
 
     def test_string_window_raises(self, daily_returns: pl.Series) -> None:
         with pytest.raises(TypeError):
