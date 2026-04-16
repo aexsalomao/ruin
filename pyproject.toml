@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ruin"
+version = "0.1.0"
+description = "A Polars-first risk metrics library for quant hedge funds"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "polars>=1.0",
+    "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+stats = ["scipy>=1.9"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-benchmark>=4.0",
+    "hypothesis>=6.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ruin"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "NPY"]
+
+[tool.mypy]
+strict = true
+disallow_untyped_defs = true
+packages = ["ruin"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+strict_markers = true
+strict_config = true
+addopts = "--cov=ruin"
+testpaths = ["tests"]
