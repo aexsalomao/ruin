@@ -1,0 +1,3620 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Polars-first risk metrics for quant hedge funds">
+      
+      
+      
+        <link rel="canonical" href="https://aexsalomao.github.io/ruin/metrics/">
+      
+      
+        <link rel="prev" href="../conventions/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Metrics - ruin</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#metrics-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ruin" class="md-header__button md-logo" aria-label="ruin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ruin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Metrics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aexsalomao/ruin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aexsalomao/ruin
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../conventions/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Conventions
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Metrics
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ruin" class="md-nav__button md-logo" aria-label="ruin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ruin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aexsalomao/ruin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aexsalomao/ruin
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-returns-ruinreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Returns (ruin.returns)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Returns (ruin.returns)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from_pricesprices-logfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_prices(prices, *, log=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#total_returnreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        total_return(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annualize_returnreturns-periods_per_year-methodgeometric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annualize_return(returns, *, periods_per_year, method="geometric")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cagrreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cagr(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-volatility-ruinvolatility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Volatility (ruin.volatility)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Volatility (ruin.volatility)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#volatilityreturns-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        volatility(returns, *, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annualize_volatilityreturns-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annualize_volatility(returns, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downside_deviationreturns-threshold00-ddof0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        downside_deviation(returns, *, threshold=0.0, ddof=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semi_deviationreturns-ddof0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        semi_deviation(returns, *, ddof=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-drawdown-ruindrawdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Drawdown (ruin.drawdown)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Drawdown (ruin.drawdown)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drawdown_seriesreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drawdown_series(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_drawdownreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_drawdown(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#average_drawdownreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        average_drawdown(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_drawdown_durationreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_drawdown_duration(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery_timereturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recovery_time(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time_underwaterreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        time_underwater(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drawdown_startreturns-drawdown_endreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drawdown_start(returns) / drawdown_end(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-risk-adjusted-ratios-ruinratios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Risk-Adjusted Ratios (ruin.ratios)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Risk-Adjusted Ratios (ruin.ratios)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_ratioreturns-risk_free00-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_ratio(returns, *, risk_free=0.0, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortino_ratioreturns-risk_free00-thresholdnone-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sortino_ratio(returns, *, risk_free=0.0, threshold=None, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calmar_ratioreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calmar_ratio(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#information_ratioreturns-benchmark-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        information_ratio(returns, benchmark, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#treynor_ratioreturns-benchmark-risk_free00-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        treynor_ratio(returns, benchmark, *, risk_free=0.0, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#omega_ratioreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        omega_ratio(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-tail-risk-ruintail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Tail Risk (ruin.tail)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Tail Risk (ruin.tail)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#value_at_riskreturns-confidence095-methodhistorical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        value_at_risk(returns, *, confidence=0.95, method="historical")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional_value_at_riskreturns-confidence095-methodhistorical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conditional_value_at_risk(returns, *, confidence=0.95, method="historical")
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-market-benchmark-relative-ruinmarket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Market / Benchmark-Relative (ruin.market)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Market / Benchmark-Relative (ruin.market)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#betareturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        beta(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downside_betareturns-benchmark-upside_betareturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        downside_beta(returns, benchmark) / upside_beta(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alphareturns-benchmark-risk_free00-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        alpha(returns, benchmark, *, risk_free=0.0, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking_errorreturns-benchmark-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tracking_error(returns, benchmark, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#correlationreturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        correlation(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#up_capturereturns-benchmark-down_capturereturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        up_capture(returns, benchmark) / down_capture(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-distribution-shape-ruindistribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Distribution Shape (ruin.distribution)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Distribution Shape (ruin.distribution)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skewnessreturns-biasfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skewness(returns, *, bias=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excess_kurtosisreturns-biasfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        excess_kurtosis(returns, *, bias=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jarque_berareturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jarque_bera(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocorrelationreturns-lag1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        autocorrelation(returns, *, lag=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-activity-ruinactivity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Activity (ruin.activity)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Activity (ruin.activity)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hit_ratereturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hit_rate(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#average_winreturns-threshold00-average_lossreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        average_win(returns, *, threshold=0.0) / average_loss(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#win_loss_ratioreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_loss_ratio(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profit_factorreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        profit_factor(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#best_periodreturns-worst_periodreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        best_period(returns) / worst_period(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#longest_winning_streakreturns-threshold00-longest_losing_streakreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        longest_winning_streak(returns, *, threshold=0.0) / longest_losing_streak(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-rolling-variants-ruinrolling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Rolling Variants (ruin.rolling)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-period-slicing-rate-conversion-ruinperiods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Period Slicing &amp; Rate Conversion (ruin.periods)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Period Slicing &amp; Rate Conversion (ruin.periods)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mtd-qtd-ytdreturns-date_col-as_ofnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mtd / qtd / ytd(returns, *, date_col, as_of=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trailingreturns-n-date_colnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trailing(returns, *, n, date_col=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#since_inceptionreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        since_inception(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#periods_per_year_forfrequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        periods_per_year_for(frequency)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annual_to_periodicrate-periods_per_year-periodic_to_annualrate-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annual_to_periodic(rate, *, periods_per_year) / periodic_to_annual(rate, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-inference-ruininference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Inference (ruin.inference)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. Inference (ruin.inference)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_standard_errorreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_standard_error(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_confidence_intervalreturns-periods_per_year-confidence095" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_confidence_interval(returns, *, periods_per_year, confidence=0.95)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap_metricfn-returns-n_samples1000-confidence095-seednone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bootstrap_metric(fn, returns, *, n_samples=1000, confidence=0.95, seed=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-bundled-report-ruinreport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Bundled Report (ruin.report)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Bundled Report (ruin.report)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summaryreturns-benchmarknone-risk_free00-periods_per_year-strictfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary(returns, benchmark=None, *, risk_free=0.0, periods_per_year, strict=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definition-implementation-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition ↔ Implementation Audit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Definition ↔ Implementation Audit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#observations-from-the-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observations from the audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-returns-ruinreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Returns (ruin.returns)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Returns (ruin.returns)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from_pricesprices-logfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_prices(prices, *, log=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#total_returnreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        total_return(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annualize_returnreturns-periods_per_year-methodgeometric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annualize_return(returns, *, periods_per_year, method="geometric")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cagrreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cagr(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-volatility-ruinvolatility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Volatility (ruin.volatility)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Volatility (ruin.volatility)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#volatilityreturns-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        volatility(returns, *, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annualize_volatilityreturns-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annualize_volatility(returns, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downside_deviationreturns-threshold00-ddof0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        downside_deviation(returns, *, threshold=0.0, ddof=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semi_deviationreturns-ddof0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        semi_deviation(returns, *, ddof=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-drawdown-ruindrawdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Drawdown (ruin.drawdown)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Drawdown (ruin.drawdown)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drawdown_seriesreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drawdown_series(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_drawdownreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_drawdown(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#average_drawdownreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        average_drawdown(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_drawdown_durationreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_drawdown_duration(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery_timereturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recovery_time(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time_underwaterreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        time_underwater(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drawdown_startreturns-drawdown_endreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drawdown_start(returns) / drawdown_end(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-risk-adjusted-ratios-ruinratios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Risk-Adjusted Ratios (ruin.ratios)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Risk-Adjusted Ratios (ruin.ratios)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_ratioreturns-risk_free00-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_ratio(returns, *, risk_free=0.0, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortino_ratioreturns-risk_free00-thresholdnone-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sortino_ratio(returns, *, risk_free=0.0, threshold=None, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calmar_ratioreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calmar_ratio(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#information_ratioreturns-benchmark-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        information_ratio(returns, benchmark, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#treynor_ratioreturns-benchmark-risk_free00-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        treynor_ratio(returns, benchmark, *, risk_free=0.0, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#omega_ratioreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        omega_ratio(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-tail-risk-ruintail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Tail Risk (ruin.tail)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Tail Risk (ruin.tail)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#value_at_riskreturns-confidence095-methodhistorical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        value_at_risk(returns, *, confidence=0.95, method="historical")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional_value_at_riskreturns-confidence095-methodhistorical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conditional_value_at_risk(returns, *, confidence=0.95, method="historical")
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-market-benchmark-relative-ruinmarket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Market / Benchmark-Relative (ruin.market)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Market / Benchmark-Relative (ruin.market)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#betareturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        beta(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downside_betareturns-benchmark-upside_betareturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        downside_beta(returns, benchmark) / upside_beta(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alphareturns-benchmark-risk_free00-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        alpha(returns, benchmark, *, risk_free=0.0, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tracking_errorreturns-benchmark-periods_per_year-ddof1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tracking_error(returns, benchmark, *, periods_per_year, ddof=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#correlationreturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        correlation(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#up_capturereturns-benchmark-down_capturereturns-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        up_capture(returns, benchmark) / down_capture(returns, benchmark)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-distribution-shape-ruindistribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Distribution Shape (ruin.distribution)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Distribution Shape (ruin.distribution)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skewnessreturns-biasfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skewness(returns, *, bias=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excess_kurtosisreturns-biasfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        excess_kurtosis(returns, *, bias=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jarque_berareturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jarque_bera(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocorrelationreturns-lag1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        autocorrelation(returns, *, lag=1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-activity-ruinactivity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Activity (ruin.activity)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Activity (ruin.activity)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hit_ratereturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hit_rate(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#average_winreturns-threshold00-average_lossreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        average_win(returns, *, threshold=0.0) / average_loss(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#win_loss_ratioreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        win_loss_ratio(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profit_factorreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        profit_factor(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#best_periodreturns-worst_periodreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        best_period(returns) / worst_period(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#longest_winning_streakreturns-threshold00-longest_losing_streakreturns-threshold00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        longest_winning_streak(returns, *, threshold=0.0) / longest_losing_streak(returns, *, threshold=0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-rolling-variants-ruinrolling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Rolling Variants (ruin.rolling)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-period-slicing-rate-conversion-ruinperiods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Period Slicing &amp; Rate Conversion (ruin.periods)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Period Slicing &amp; Rate Conversion (ruin.periods)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mtd-qtd-ytdreturns-date_col-as_ofnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mtd / qtd / ytd(returns, *, date_col, as_of=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trailingreturns-n-date_colnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trailing(returns, *, n, date_col=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#since_inceptionreturns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        since_inception(returns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#periods_per_year_forfrequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        periods_per_year_for(frequency)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annual_to_periodicrate-periods_per_year-periodic_to_annualrate-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annual_to_periodic(rate, *, periods_per_year) / periodic_to_annual(rate, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-inference-ruininference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Inference (ruin.inference)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. Inference (ruin.inference)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_standard_errorreturns-periods_per_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_standard_error(returns, *, periods_per_year)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sharpe_confidence_intervalreturns-periods_per_year-confidence095" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sharpe_confidence_interval(returns, *, periods_per_year, confidence=0.95)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap_metricfn-returns-n_samples1000-confidence095-seednone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bootstrap_metric(fn, returns, *, n_samples=1000, confidence=0.95, seed=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-bundled-report-ruinreport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Bundled Report (ruin.report)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Bundled Report (ruin.report)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summaryreturns-benchmarknone-risk_free00-periods_per_year-strictfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        summary(returns, benchmark=None, *, risk_free=0.0, periods_per_year, strict=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definition-implementation-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition ↔ Implementation Audit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Definition ↔ Implementation Audit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#observations-from-the-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observations from the audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/aexsalomao/ruin/edit/master/docs/metrics.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="metrics-reference">Metrics Reference</h1>
+<p>Authoritative definitions, mathematical formulas, modelling assumptions, and
+citations for every metric exposed by <code>ruin</code>.</p>
+<p>The library follows the conventions set out in
+<a href="../conventions/"><code>docs/conventions.md</code></a>:</p>
+<ul>
+<li>Returns are dimensionless fractions (<code>0.01</code> = 1%).</li>
+<li>Drawdowns are non-positive (<code>-0.23</code> = 23% drawdown).</li>
+<li>VaR / CVaR are positive loss magnitudes (<code>0.02</code> = "lose at most 2%").</li>
+<li><code>risk_free</code> is <strong>per-period</strong>, never annualized.</li>
+<li>NaN / null values are dropped before computation; benchmark inputs must be
+  pre-aligned in length.</li>
+</ul>
+<h3 id="notation">Notation</h3>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(r_t\)</span></td>
+<td>period-<span class="arithmatex">\(t\)</span> return (a fraction)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\bar r\)</span></td>
+<td>sample mean of <span class="arithmatex">\(\{r_t\}\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(n\)</span></td>
+<td>number of return observations after NaN drop</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(q\)</span></td>
+<td><code>periods_per_year</code> (annualization factor; e.g. 252 for daily)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(r_f\)</span></td>
+<td>per-period risk-free rate</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\tau\)</span></td>
+<td>per-period threshold or minimum acceptable return (MAR)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(b_t\)</span></td>
+<td>benchmark return in period <span class="arithmatex">\(t\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\sigma\)</span></td>
+<td>sample standard deviation, <code>ddof=1</code> unless noted otherwise</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(W_t\)</span></td>
+<td>cumulative wealth <span class="arithmatex">\(\prod_{s \le t}(1 + r_s)\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(H_t\)</span></td>
+<td>running high-water mark <span class="arithmatex">\(\max_{s \le t} W_s\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(D_t\)</span></td>
+<td>period-<span class="arithmatex">\(t\)</span> drawdown <span class="arithmatex">\(W_t / H_t - 1 \le 0\)</span></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\Phi(\cdot), \varphi(\cdot)\)</span></td>
+<td>standard normal CDF / PDF</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\mathbf{1}\{\cdot\}\)</span></td>
+<td>indicator function</td>
+</tr>
+</tbody>
+</table>
+<p>Each metric below follows the same template:</p>
+<blockquote>
+<p><strong>Definition.</strong> What the function computes in one sentence.
+<strong>Formula.</strong> The mathematical expression.
+<strong>Assumptions.</strong> When the metric is reliable and how it can mislead.
+<strong>Source(s).</strong> Primary academic / industry references.</p>
+</blockquote>
+<hr />
+<h2 id="1-returns-ruinreturns">1. Returns (<code>ruin.returns</code>)</h2>
+<h3 id="from_pricesprices-logfalse"><code>from_prices(prices, *, log=False)</code></h3>
+<p><strong>Definition.</strong> Convert a positive price series of length <span class="arithmatex">\(N\)</span> into <span class="arithmatex">\(N - 1\)</span>
+period returns; simple by default, log if <code>log=True</code>.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+r_t^{\text{simple}} = \frac{P_t}{P_{t-1}} - 1, \qquad
+r_t^{\text{log}} = \ln\!\left(\frac{P_t}{P_{t-1}}\right)
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Prices are strictly positive; the function raises if any <span class="arithmatex">\(P_t \le 0\)</span>.</li>
+<li>Equal time-spacing between observations.</li>
+<li>Log returns are time-additive but not portfolio-additive; simple returns are
+  portfolio-additive but not time-additive.</li>
+</ul>
+<p><strong>Source.</strong> Tsay, <em>Analysis of Financial Time Series</em>, 3rd ed. (Wiley, 2010),
+§1.1.</p>
+<hr />
+<h3 id="total_returnreturns"><code>total_return(returns)</code></h3>
+<p><strong>Definition.</strong> Cumulative compounded return over the full sample.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+R_{\text{tot}} = \prod_{t=1}^{n} (1 + r_t) - 1
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Returns reinvest at the realized rate each period.</li>
+<li>Path-dependent and uninformative about risk.</li>
+</ul>
+<p><strong>Source.</strong> Bodie, Kane &amp; Marcus, <em>Investments</em>, 12th ed. (McGraw-Hill, 2021),
+ch. 5.</p>
+<hr />
+<h3 id="annualize_returnreturns-periods_per_year-methodgeometric"><code>annualize_return(returns, *, periods_per_year, method="geometric")</code></h3>
+<p><strong>Definition.</strong> Scale the realized return to a one-year horizon, geometrically
+(default) or arithmetically.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+R_{\text{ann}}^{\text{geo}} = (1 + R_{\text{tot}})^{q / n} - 1, \qquad
+R_{\text{ann}}^{\text{arith}} = \bar r \cdot q
+\]</div>
+<p>The geometric branch returns <code>NaN</code> when <span class="arithmatex">\(R_{\text{tot}} \le -1\)</span> (ruin), since
+fractional powers of non-positive numbers are undefined.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>The realized period is representative of a typical year (clearly violated on
+  short series).</li>
+<li>Geometric assumes terminal-wealth equivalence under continued compounding.</li>
+<li>Arithmetic assumes i.i.d. returns; it overstates expected terminal wealth
+  for volatile strategies.</li>
+</ul>
+<p><strong>Source.</strong> CFA Institute, <em>Quantitative Investment Analysis</em>, 4th ed. (Wiley,
+2020), ch. 1; Meucci, <em>Risk and Asset Allocation</em> (Springer, 2005), §3.2.</p>
+<hr />
+<h3 id="cagrreturns-periods_per_year"><code>cagr(returns, *, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Compound annual growth rate — alias for the geometric
+<code>annualize_return</code>.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{CAGR} = (1 + R_{\text{tot}})^{q / n} - 1
+\]</div>
+<p><strong>Assumptions / Source.</strong> As for geometric <code>annualize_return</code>. Industry term;
+no canonical academic origin.</p>
+<hr />
+<h2 id="2-volatility-ruinvolatility">2. Volatility (<code>ruin.volatility</code>)</h2>
+<h3 id="volatilityreturns-ddof1"><code>volatility(returns, *, ddof=1)</code></h3>
+<p><strong>Definition.</strong> Periodic sample standard deviation of returns (not
+annualized).</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\sigma = \sqrt{\frac{1}{n - \text{ddof}} \sum_{t=1}^{n} (r_t - \bar r)^2}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Returns are i.i.d. and the second moment exists.</li>
+<li>Symmetric loss function — an upside move of size <span class="arithmatex">\(x\)</span> contributes the same
+  as a downside move of size <span class="arithmatex">\(x\)</span>.</li>
+</ul>
+<p><strong>Source.</strong> Markowitz, "Portfolio Selection," <em>Journal of Finance</em> 7(1), 1952.</p>
+<hr />
+<h3 id="annualize_volatilityreturns-periods_per_year-ddof1"><code>annualize_volatility(returns, *, periods_per_year, ddof=1)</code></h3>
+<p><strong>Definition.</strong> Annualized volatility via the square-root-of-time rule.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\sigma_{\text{ann}} = \sigma \cdot \sqrt{q}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Returns are i.i.d. (zero serial correlation).</li>
+<li>Under autocorrelation the rule under-/overstates risk; the corrected formula
+  is <span class="arithmatex">\(\sigma_{\text{ann}} = \sigma \sqrt{q\,(1 + 2\sum_{k=1}^{K} \rho_k)}\)</span>
+  (see Lo (2002) below).</li>
+</ul>
+<p><strong>Source.</strong> Diebold, Hickman, Inoue &amp; Schuermann, "Converting 1-day Volatility
+to h-day Volatility: Scaling by √h is Worse than You Think," Wharton FIC
+Working Paper 97-34, 1997.</p>
+<hr />
+<h3 id="downside_deviationreturns-threshold00-ddof0"><code>downside_deviation(returns, *, threshold=0.0, ddof=0)</code></h3>
+<p><strong>Definition.</strong> Sortino-convention semi-deviation: only periods with
+<span class="arithmatex">\(r_t &lt; \tau\)</span> contribute to the numerator, but <strong>all</strong> <span class="arithmatex">\(n\)</span> periods are in the
+denominator.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{DD}_\tau = \sqrt{\frac{1}{n - \text{ddof}} \sum_{t=1}^{n} \min(r_t - \tau,\,0)^2}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>The MAR <span class="arithmatex">\(\tau\)</span> is the relevant reference point — not the mean.</li>
+<li>Investors care asymmetrically about losses below <span class="arithmatex">\(\tau\)</span>.</li>
+<li><code>ddof=0</code> matches the Sortino convention; pass <code>ddof=1</code> for sample-style.</li>
+</ul>
+<p><strong>Source.</strong> Sortino &amp; van der Meer, "Downside Risk," <em>Journal of Portfolio
+Management</em> 17(4), 1991; Sortino &amp; Price, "Performance Measurement in a
+Downside Risk Framework," <em>Journal of Investing</em> 3(3), 1994.</p>
+<hr />
+<h3 id="semi_deviationreturns-ddof0"><code>semi_deviation(returns, *, ddof=0)</code></h3>
+<p><strong>Definition.</strong> Standard deviation computed only over strictly negative
+returns (numerator and denominator both restricted). Returns 0 when there are
+no negative returns.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(n_{-} = |\{t : r_t &lt; 0\}|\)</span> and
+<span class="arithmatex">\(\bar r_{-} = \frac{1}{n_{-}} \sum_{t : r_t &lt; 0} r_t\)</span>,</p>
+<div class="arithmatex">\[
+\text{SD}_{-} = \sqrt{\frac{1}{n_{-} - \text{ddof}} \sum_{t \,:\, r_t &lt; 0} (r_t - \bar r_{-})^2}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Behaviour around zero matters more than around the mean.</li>
+<li>Sensitive to small samples once the negative-return count is small.</li>
+</ul>
+<p><strong>Source.</strong> Markowitz, <em>Portfolio Selection: Efficient Diversification of
+Investments</em> (Wiley, 1959), ch. IX (semivariance).</p>
+<hr />
+<h2 id="3-drawdown-ruindrawdown">3. Drawdown (<code>ruin.drawdown</code>)</h2>
+<p>All drawdown metrics derive from</p>
+<div class="arithmatex">\[
+W_t = \prod_{s \le t}(1 + r_s), \qquad
+H_t = \max_{s \le t} W_s, \qquad
+D_t = \frac{W_t}{H_t} - 1 \le 0.
+\]</div>
+<p>The implementation prepends an initial wealth of <span class="arithmatex">\(1\)</span> so first-period losses
+register as drawdowns.</p>
+<h3 id="drawdown_seriesreturns"><code>drawdown_series(returns)</code></h3>
+<p><strong>Definition.</strong> The full drawdown time series <span class="arithmatex">\(\{D_t\}_{t=1}^{n}\)</span>.</p>
+<p><strong>Formula.</strong> As above.</p>
+<p><strong>Assumptions.</strong> Path- and sample-dependent; daily vs. month-end data produce
+different series.</p>
+<p><strong>Source.</strong> Magdon-Ismail &amp; Atiya, "Maximum Drawdown," <em>Risk Magazine</em> 17(10),
+2004.</p>
+<hr />
+<h3 id="max_drawdownreturns"><code>max_drawdown(returns)</code></h3>
+<p><strong>Definition.</strong> The single worst drawdown observed over the sample.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+D^{\star} = \min_{1 \le t \le n} D_t \le 0
+\]</div>
+<p><strong>Assumptions.</strong> Short histories systematically understate <span class="arithmatex">\(|D^{\star}|\)</span>.</p>
+<p><strong>Source.</strong> Magdon-Ismail &amp; Atiya (2004); Grossman &amp; Zhou, "Optimal Investment
+Strategies for Controlling Drawdowns," <em>Mathematical Finance</em> 3(3), 1993.</p>
+<hr />
+<h3 id="average_drawdownreturns"><code>average_drawdown(returns)</code></h3>
+<p><strong>Definition.</strong> Mean trough magnitude across distinct drawdown <strong>episodes</strong> —
+contiguous runs of <span class="arithmatex">\(D_t &lt; 0\)</span> separated by points where <span class="arithmatex">\(D_t \ge 0\)</span>. Returns 0
+when there are no drawdowns.</p>
+<p><strong>Formula.</strong> Let <span class="arithmatex">\(E_1, \dots, E_K\)</span> index the underwater episodes. Then</p>
+<div class="arithmatex">\[
+\overline{D} = \frac{1}{K} \sum_{k=1}^{K} \min_{t \in E_k} D_t.
+\]</div>
+<p><strong>Assumptions.</strong> "Episode" is a definitional choice; alternatives
+(peak-to-peak clustering, threshold filters) yield different numbers.</p>
+<p><strong>Source.</strong> Industry convention; compatible with Chekhlov, Uryasev &amp;
+Zabarankin, "Drawdown Measure in Portfolio Optimization," <em>International
+Journal of Theoretical and Applied Finance</em> 8(1), 2005.</p>
+<hr />
+<h3 id="max_drawdown_durationreturns"><code>max_drawdown_duration(returns)</code></h3>
+<p><strong>Definition.</strong> Longest consecutive count of periods spent underwater.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+T^{\text{uw}}_{\max} = \max_{(a,b)} \{\, b - a + 1 \;:\; D_t &lt; 0 \;\forall\, t \in [a, b]\,\}
+\]</div>
+<p><strong>Assumptions.</strong> Equally-spaced periods; units are <em>periods</em>, not calendar
+days.</p>
+<p><strong>Source.</strong> Magdon-Ismail &amp; Atiya (2004); Burghardt, Duncan &amp; Liu,
+"Deciphering Drawdowns," <em>Risk Magazine</em> 16(9), 2003.</p>
+<hr />
+<h3 id="recovery_timereturns"><code>recovery_time(returns)</code></h3>
+<p><strong>Definition.</strong> Number of periods from the maximum-drawdown trough to the
+first subsequent return to a new HWM. <code>NaN</code> if the strategy has not recovered
+by the end of the sample, <span class="arithmatex">\(0\)</span> if no drawdown ever occurred.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(t^{\star} = \arg\min_t D_t\)</span>,</p>
+<div class="arithmatex">\[
+T^{\text{rec}} = \min\{\, t &gt; t^{\star} \;:\; D_t \ge 0 \,\} - t^{\star},
+\]</div>
+<p>returning <code>NaN</code> if the set is empty.</p>
+<p><strong>Source.</strong> Burghardt, Duncan &amp; Liu (2003).</p>
+<hr />
+<h3 id="time_underwaterreturns"><code>time_underwater(returns)</code></h3>
+<p><strong>Definition.</strong> Total number of periods spent below the HWM.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+T^{\text{uw}} = \sum_{t=1}^{n} \mathbf{1}\{D_t &lt; 0\}
+\]</div>
+<hr />
+<h3 id="drawdown_startreturns-drawdown_endreturns"><code>drawdown_start(returns)</code> / <code>drawdown_end(returns)</code></h3>
+<p><strong>Definition.</strong> Zero-based indices of, respectively, the HWM peak immediately
+preceding the maximum drawdown and the trough itself.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(t^{\star} = \arg\min_t D_t\)</span>,</p>
+<div class="arithmatex">\[
+t_{\text{start}} = \max\{\, t \le t^{\star} \;:\; D_t \ge 0 \,\}, \qquad
+t_{\text{end}} = t^{\star}.
+\]</div>
+<p><strong>Assumptions.</strong> Discrete period index; for the rare degenerate case of no
+drawdown both functions return <span class="arithmatex">\(0\)</span>.</p>
+<p><strong>Source.</strong> Standard construction; see Magdon-Ismail &amp; Atiya (2004).</p>
+<hr />
+<h2 id="4-risk-adjusted-ratios-ruinratios">4. Risk-Adjusted Ratios (<code>ruin.ratios</code>)</h2>
+<h3 id="sharpe_ratioreturns-risk_free00-periods_per_year-ddof1"><code>sharpe_ratio(returns, *, risk_free=0.0, periods_per_year, ddof=1)</code></h3>
+<p><strong>Definition.</strong> Annualized excess return per unit of annualized volatility of
+excess returns.</p>
+<p><strong>Formula.</strong> Letting <span class="arithmatex">\(e_t = r_t - r_f\)</span> and <span class="arithmatex">\(\sigma_e\)</span> its <code>ddof=1</code> std,</p>
+<div class="arithmatex">\[
+\text{SR} = \frac{q \cdot \bar e}{\sqrt{q} \cdot \sigma_e} = \frac{\bar e}{\sigma_e} \sqrt{q}.
+\]</div>
+<p>Returns <code>NaN</code> when <span class="arithmatex">\(\sqrt{q}\,\sigma_e = 0\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Returns are i.i.d. and approximately Normal (justifies <span class="arithmatex">\(\sqrt{q}\)</span> scaling).</li>
+<li>Symmetric loss function (penalises upside variability equally).</li>
+</ul>
+<p><strong>Source.</strong> Sharpe, "Mutual Fund Performance," <em>Journal of Business</em> 39(1),
+1966; Sharpe, "The Sharpe Ratio," <em>Journal of Portfolio Management</em> 21(1),
+1994.</p>
+<hr />
+<h3 id="sortino_ratioreturns-risk_free00-thresholdnone-periods_per_year"><code>sortino_ratio(returns, *, risk_free=0.0, threshold=None, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Annualized excess return per unit of annualized downside
+deviation. <code>threshold</code> defaults to <code>risk_free</code>; downside deviation uses
+<code>ddof=0</code> and the all-periods denominator.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{Sortino} = \frac{q \cdot \overline{(r - r_f)}}{\sqrt{q} \cdot \text{DD}_\tau}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Investors care about returns below the MAR <span class="arithmatex">\(\tau\)</span>, not below the mean.</li>
+<li><span class="arithmatex">\(\sqrt{q}\)</span> annualization of <span class="arithmatex">\(\text{DD}_\tau\)</span> inherits the i.i.d. caveats of
+  Sharpe.</li>
+</ul>
+<p><strong>Source.</strong> Sortino &amp; Price (1994); Sortino, <em>The Sortino Framework for
+Constructing Portfolios</em> (Elsevier, 2010).</p>
+<hr />
+<h3 id="calmar_ratioreturns-periods_per_year"><code>calmar_ratio(returns, *, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Annualized return per unit of maximum drawdown magnitude.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{Calmar} = \frac{\text{CAGR}}{|D^{\star}|}
+\]</div>
+<p>Returns <code>NaN</code> when <span class="arithmatex">\(D^{\star} = 0\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li><span class="arithmatex">\(D^{\star}\)</span> is a meaningful summary of risk (path- and sample-dependent).</li>
+<li>The classical Calmar uses a 36-month rolling window; this implementation
+  uses the full sample. Short histories with no large drawdowns yield
+  artificially high Calmar.</li>
+</ul>
+<p><strong>Source.</strong> Young, "Calmar Ratio: A Smoother Tool," <em>Futures Magazine</em>, 1991.</p>
+<hr />
+<h3 id="information_ratioreturns-benchmark-periods_per_year-ddof1"><code>information_ratio(returns, benchmark, *, periods_per_year, ddof=1)</code></h3>
+<p><strong>Definition.</strong> Annualized active return per unit of annualized tracking
+error.</p>
+<p><strong>Formula.</strong> Letting <span class="arithmatex">\(a_t = r_t - b_t\)</span>,</p>
+<div class="arithmatex">\[
+\text{IR} = \frac{q \cdot \bar a}{\sqrt{q} \cdot \sigma_a}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Active returns are i.i.d. (<span class="arithmatex">\(\sqrt{q}\)</span> scaling).</li>
+<li>Returns and benchmark are pre-aligned in length and time.</li>
+</ul>
+<p><strong>Source.</strong> Goodwin, "The Information Ratio," <em>Financial Analysts Journal</em>
+54(4), 1998; Grinold &amp; Kahn, <em>Active Portfolio Management</em>, 2nd ed.
+(McGraw-Hill, 2000), ch. 5.</p>
+<hr />
+<h3 id="treynor_ratioreturns-benchmark-risk_free00-periods_per_year"><code>treynor_ratio(returns, benchmark, *, risk_free=0.0, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Annualized excess return per unit of market beta.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{Treynor} = \frac{q \cdot \overline{(r - r_f)}}{\beta}
+\]</div>
+<p>Returns <code>NaN</code> if <span class="arithmatex">\(\beta = 0\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>CAPM-style framework: market beta captures all systematic risk.</li>
+<li>Poorly defined when <span class="arithmatex">\(\beta \approx 0\)</span> or negative.</li>
+<li>Most informative for diversified, long-only portfolios.</li>
+</ul>
+<p><strong>Source.</strong> Treynor, "How to Rate Management of Investment Funds," <em>Harvard
+Business Review</em> 43(1), 1965.</p>
+<hr />
+<h3 id="omega_ratioreturns-threshold00"><code>omega_ratio(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Probability-weighted ratio of gains to losses around a
+threshold <span class="arithmatex">\(\tau\)</span>. <span class="arithmatex">\(\Omega &gt; 1\)</span> iff <span class="arithmatex">\(\bar r &gt; \tau\)</span> for any distribution with
+finite mean. At <span class="arithmatex">\(\tau = 0\)</span> it coincides with the profit factor.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\Omega(\tau) = \frac{\sum_{t} \max(r_t - \tau,\,0)}{\sum_{t} \max(\tau - r_t,\,0)}
+\]</div>
+<p>equivalent to the integral form</p>
+<div class="arithmatex">\[
+\Omega(\tau) = \frac{\int_\tau^{\infty} \bigl(1 - F(x)\bigr)\,dx}{\int_{-\infty}^{\tau} F(x)\,dx}.
+\]</div>
+<p>Returns <code>NaN</code> when no observations fall strictly below <span class="arithmatex">\(\tau\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Threshold choice is critical — using <span class="arithmatex">\(r_f\)</span> per-period is more economically
+  meaningful than <span class="arithmatex">\(\tau = 0\)</span>.</li>
+</ul>
+<p><strong>Source.</strong> Keating &amp; Shadwick, "A Universal Performance Measure," <em>Journal of
+Performance Measurement</em> 6(3), 2002.</p>
+<hr />
+<h2 id="5-tail-risk-ruintail">5. Tail Risk (<code>ruin.tail</code>)</h2>
+<h3 id="value_at_riskreturns-confidence095-methodhistorical"><code>value_at_risk(returns, *, confidence=0.95, method="historical")</code></h3>
+<p><strong>Definition.</strong> The smallest positive loss <span class="arithmatex">\(L\)</span> such that
+<span class="arithmatex">\(\mathbb{P}(\text{loss} \le L) \ge c\)</span> at confidence <span class="arithmatex">\(c \in (0,1)\)</span>.</p>
+<p><strong>Formula.</strong> Let <span class="arithmatex">\(\alpha = 1 - c\)</span>.</p>
+<ul>
+<li><em>Historical</em>: <span class="arithmatex">\(\;\text{VaR}_c = -\hat Q_\alpha(r)\)</span>, where <span class="arithmatex">\(\hat Q_\alpha\)</span> is
+  the empirical <span class="arithmatex">\(\alpha\)</span>-quantile with linear interpolation.</li>
+<li><em>Parametric</em> (Gaussian):
+  <span class="arithmatex">\(\;\text{VaR}_c = -\bigl(\hat\mu + \Phi^{-1}(\alpha)\,\hat\sigma\bigr)\)</span>, with
+  sample mean <span class="arithmatex">\(\hat\mu\)</span> and <code>ddof=1</code> sample std <span class="arithmatex">\(\hat\sigma\)</span>.</li>
+</ul>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li><em>Historical</em>: requires large samples; insensitive to tail shape beyond the
+  cutoff.</li>
+<li><em>Parametric</em>: returns are Normally distributed — systematically
+  underestimates losses for fat-tailed distributions.</li>
+<li>VaR is <strong>not coherent</strong> (fails sub-additivity in general).</li>
+</ul>
+<p><strong>Source.</strong> Jorion, <em>Value at Risk: The New Benchmark for Managing Financial
+Risk</em>, 3rd ed. (McGraw-Hill, 2007); Artzner, Delbaen, Eber &amp; Heath, "Coherent
+Measures of Risk," <em>Mathematical Finance</em> 9(3), 1999.</p>
+<hr />
+<h3 id="conditional_value_at_riskreturns-confidence095-methodhistorical"><code>conditional_value_at_risk(returns, *, confidence=0.95, method="historical")</code></h3>
+<p>(Aliased as <code>expected_shortfall</code>.)</p>
+<p><strong>Definition.</strong> Expected loss conditional on being in the <span class="arithmatex">\(\alpha = 1 - c\)</span>
+left tail.</p>
+<p><strong>Formula.</strong> Let <span class="arithmatex">\(z = \Phi^{-1}(\alpha)\)</span>.</p>
+<ul>
+<li><em>Historical</em>:
+  <span class="arithmatex">\(\;\text{CVaR}_c = -\,\mathbb{E}\!\left[\,r \mid r \le \hat Q_\alpha(r)\right]\)</span>.
+  If no observation is at or below <span class="arithmatex">\(\hat Q_\alpha\)</span>, the implementation falls
+  back to <span class="arithmatex">\(-\hat Q_\alpha\)</span>.</li>
+<li><em>Parametric</em> (Gaussian):
+  <span class="arithmatex">\(\;\text{CVaR}_c = -\!\left(\hat\mu - \hat\sigma \cdot \dfrac{\varphi(z)}{\alpha}\right)\)</span>.</li>
+</ul>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>CVaR is <strong>coherent</strong> (sub-additive) — preferred over VaR for portfolio
+  aggregation.</li>
+<li><em>Parametric</em> version inherits Normality.</li>
+<li>Sample-size sensitive; consider bootstrapping with <code>bootstrap_metric</code>.</li>
+</ul>
+<p><strong>Source.</strong> Rockafellar &amp; Uryasev, "Optimization of Conditional Value-at-Risk,"
+<em>Journal of Risk</em> 2(3), 2000; Acerbi &amp; Tasche, "On the Coherence of Expected
+Shortfall," <em>Journal of Banking &amp; Finance</em> 26(7), 2002.</p>
+<hr />
+<h2 id="6-market-benchmark-relative-ruinmarket">6. Market / Benchmark-Relative (<code>ruin.market</code>)</h2>
+<h3 id="betareturns-benchmark"><code>beta(returns, benchmark)</code></h3>
+<p><strong>Definition.</strong> OLS slope of strategy returns regressed on benchmark returns.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\beta = \frac{\widehat{\text{Cov}}(r, b)}{\widehat{\text{Var}}(b)}
+\]</div>
+<p>with <code>ddof=1</code> everywhere; <code>NaN</code> when <span class="arithmatex">\(\widehat{\text{Var}}(b) = 0\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Linear relationship between strategy and benchmark.</li>
+<li>Stationarity — rolling beta is more informative than full-sample beta for
+  live monitoring.</li>
+</ul>
+<p><strong>Source.</strong> Sharpe, "Capital Asset Prices: A Theory of Market Equilibrium
+Under Conditions of Risk," <em>Journal of Finance</em> 19(3), 1964.</p>
+<hr />
+<h3 id="downside_betareturns-benchmark-upside_betareturns-benchmark"><code>downside_beta(returns, benchmark)</code> / <code>upside_beta(returns, benchmark)</code></h3>
+<p><strong>Definition.</strong> Beta computed only on periods where the benchmark is negative
+(downside) or positive (upside). Both return <code>NaN</code> when fewer than 2
+conditioning observations or zero conditional variance.</p>
+<p><strong>Formula.</strong> Let <span class="arithmatex">\(\mathcal{T}_- = \{t : b_t &lt; 0\}\)</span> and
+<span class="arithmatex">\(\mathcal{T}_+ = \{t : b_t &gt; 0\}\)</span>. Then</p>
+<div class="arithmatex">\[
+\beta^{-} = \frac{\widehat{\text{Cov}}_{\mathcal{T}_-}(r, b)}{\widehat{\text{Var}}_{\mathcal{T}_-}(b)}, \qquad
+\beta^{+} = \frac{\widehat{\text{Cov}}_{\mathcal{T}_+}(r, b)}{\widehat{\text{Var}}_{\mathcal{T}_+}(b)}.
+\]</div>
+<p><strong>Assumptions.</strong> Conditional samples are large enough for stable second
+moments; otherwise the metric is dominated by a few observations.</p>
+<p><strong>Source.</strong> Bawa &amp; Lindenberg, "Capital Market Equilibrium in a Mean-Lower
+Partial Moment Framework," <em>Journal of Financial Economics</em> 5(2), 1977; Ang,
+Chen &amp; Xing, "Downside Risk," <em>Review of Financial Studies</em> 19(4), 2006.</p>
+<hr />
+<h3 id="alphareturns-benchmark-risk_free00-periods_per_year"><code>alpha(returns, benchmark, *, risk_free=0.0, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Annualized Jensen's alpha — the CAPM intercept on excess
+returns.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\alpha = q \cdot \overline{(r - r_f)} - \beta \cdot q \cdot \overline{(b - r_f)}
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>CAPM holds (a strong empirical assumption).</li>
+<li>Treat as a performance decomposition rather than a causal attribution.</li>
+</ul>
+<p><strong>Source.</strong> Jensen, "The Performance of Mutual Funds in the Period 1945–1964,"
+<em>Journal of Finance</em> 23(2), 1968.</p>
+<hr />
+<h3 id="tracking_errorreturns-benchmark-periods_per_year-ddof1"><code>tracking_error(returns, benchmark, *, periods_per_year, ddof=1)</code></h3>
+<p><strong>Definition.</strong> Annualized standard deviation of active returns.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(a_t = r_t - b_t\)</span>,</p>
+<div class="arithmatex">\[
+\text{TE} = \sqrt{q} \cdot \sigma_a.
+\]</div>
+<p><strong>Assumptions.</strong> Active returns are i.i.d.</p>
+<p><strong>Source.</strong> Roll, "A Mean/Variance Analysis of Tracking Error," <em>Journal of
+Portfolio Management</em> 18(4), 1992.</p>
+<hr />
+<h3 id="correlationreturns-benchmark"><code>correlation(returns, benchmark)</code></h3>
+<p><strong>Definition.</strong> Pearson product-moment correlation, <span class="arithmatex">\(\rho \in [-1, 1]\)</span>.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\rho = \frac{\widehat{\text{Cov}}(r, b)}{\sigma_r \, \sigma_b}
+\]</div>
+<p><strong>Assumptions.</strong> Joint distribution is well-approximated by a bivariate
+distribution with finite second moments; nonlinear dependence is missed.</p>
+<p><strong>Source.</strong> Pearson, "Notes on the History of Correlation," <em>Biometrika</em> 13,
+1920 (historical).</p>
+<hr />
+<h3 id="up_capturereturns-benchmark-down_capturereturns-benchmark"><code>up_capture(returns, benchmark)</code> / <code>down_capture(returns, benchmark)</code></h3>
+<p><strong>Definition.</strong> Geometric capture ratios over benchmark-up / benchmark-down
+periods.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(\mathcal{T}_+ = \{t : b_t &gt; 0\}\)</span> and
+<span class="arithmatex">\(\mathcal{T}_- = \{t : b_t &lt; 0\}\)</span>,</p>
+<div class="arithmatex">\[
+\text{Up} = \frac{\prod_{t \in \mathcal{T}_+}(1 + r_t) - 1}{\prod_{t \in \mathcal{T}_+}(1 + b_t) - 1}, \qquad
+\text{Down} = \frac{\prod_{t \in \mathcal{T}_-}(1 + r_t) - 1}{\prod_{t \in \mathcal{T}_-}(1 + b_t) - 1}.
+\]</div>
+<p>Returns <code>NaN</code> when there are no qualifying periods or the benchmark
+compounded return is exactly zero.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>"Up market" is defined as a single-period benchmark <span class="arithmatex">\(&gt; 0\)</span>; alternative
+  methodologies use monthly or quarterly aggregation.</li>
+<li>Short series are unreliable.</li>
+</ul>
+<p><strong>Source.</strong> Morningstar, <em>Morningstar Methodology Paper: Upside/Downside
+Capture Ratio</em>, 2011.</p>
+<hr />
+<h2 id="7-distribution-shape-ruindistribution">7. Distribution Shape (<code>ruin.distribution</code>)</h2>
+<p>Standardized residuals: <span class="arithmatex">\(z_t = (r_t - \bar r) / \sigma\)</span>, with <span class="arithmatex">\(\sigma\)</span> the
+sample std (<code>ddof=1</code>). All moment-based metrics return <code>NaN</code> when the input
+is constant.</p>
+<h3 id="skewnessreturns-biasfalse"><code>skewness(returns, *, bias=False)</code></h3>
+<p><strong>Definition.</strong> Third standardized moment; negative = left-skewed, zero =
+symmetric.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\hat S_{\text{biased}} = \frac{1}{n} \sum_{t=1}^{n} z_t^3, \qquad
+\hat S_{\text{unbiased}} = \frac{n^2}{(n-1)(n-2)} \cdot \hat S_{\text{biased}}.
+\]</div>
+<p><strong>Assumptions.</strong> Reliable only with reasonable sample sizes; bias correction
+assumes independent observations.</p>
+<p><strong>Source.</strong> Joanes &amp; Gill, "Comparing Measures of Sample Skewness and
+Kurtosis," <em>Journal of the Royal Statistical Society Series D</em> 47(1), 1998
+(SAS / SPSS / Excel SKEW conventions).</p>
+<hr />
+<h3 id="excess_kurtosisreturns-biasfalse"><code>excess_kurtosis(returns, *, bias=False)</code></h3>
+<p><strong>Definition.</strong> Fisher excess kurtosis; Normal <span class="arithmatex">\(= 0\)</span>, positive <span class="arithmatex">\(=\)</span> fatter
+tails.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\hat K_{\text{biased}} = \frac{1}{n} \sum_{t=1}^{n} z_t^4 - 3,
+\]</div>
+<div class="arithmatex">\[
+\hat K_{\text{unbiased}} = \frac{n(n+1)}{(n-1)(n-2)(n-3)} \sum_{t=1}^{n} z_t^4 \;-\; \frac{3(n-1)^2}{(n-2)(n-3)}.
+\]</div>
+<p><strong>Assumptions.</strong> Large samples (n &gt; 100 is a useful rule of thumb);
+independence for the bias correction.</p>
+<p><strong>Source.</strong> Joanes &amp; Gill (1998) (Excel KURT convention).</p>
+<hr />
+<h3 id="jarque_berareturns"><code>jarque_bera(returns)</code></h3>
+<p><strong>Definition.</strong> Jarque–Bera asymptotic test of Normality. Returns a frozen
+<code>JarqueBeraResult(statistic, p_value)</code>.</p>
+<p><strong>Formula.</strong> Using <strong>biased</strong> <span class="arithmatex">\(\hat S\)</span> and <span class="arithmatex">\(\hat K\)</span>,</p>
+<div class="arithmatex">\[
+\text{JB} = \frac{n}{6}\left(\hat S^2 + \frac{\hat K^2}{4}\right) \;\stackrel{H_0}{\sim}\; \chi^2_2,
+\]</div>
+<div class="arithmatex">\[
+p = \exp\!\left(-\,\text{JB} / 2\right) \quad \text{(exact $\chi^2_2$ survival).}
+\]</div>
+<p><strong>Assumptions.</strong> Asymptotic — unreliable for <span class="arithmatex">\(n \lesssim 100\)</span>. Failing to
+reject does not prove Normality.</p>
+<p><strong>Source.</strong> Jarque &amp; Bera, "Efficient Tests for Normality, Homoscedasticity
+and Serial Independence of Regression Residuals," <em>Economics Letters</em> 6(3),
+1980.</p>
+<hr />
+<h3 id="autocorrelationreturns-lag1"><code>autocorrelation(returns, *, lag=1)</code></h3>
+<p><strong>Definition.</strong> Lag-<span class="arithmatex">\(k\)</span> serial autocorrelation.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\rho_k = \frac{\widehat{\text{Cov}}(r_t,\, r_{t-k})}{\sigma(r_t)\,\sigma(r_{t-k})}
+\]</div>
+<p>implemented as the Pearson correlation between <span class="arithmatex">\(r_{[k+1:\,n]}\)</span> and
+<span class="arithmatex">\(r_{[1:\,n-k]}\)</span>.</p>
+<p><strong>Assumptions.</strong> Stationarity. Positive lag-1 autocorrelation is a key
+diagnostic for smoothed / illiquid pricing and invalidates the
+square-root-of-time rule.</p>
+<p><strong>Source.</strong> Box, Jenkins, Reinsel &amp; Ljung, <em>Time Series Analysis: Forecasting
+and Control</em>, 5th ed. (Wiley, 2015), ch. 2.</p>
+<hr />
+<h2 id="8-activity-ruinactivity">8. Activity (<code>ruin.activity</code>)</h2>
+<p>All thresholds default to <span class="arithmatex">\(\tau = 0\)</span>; pass the per-period <code>risk_free</code> for an
+economically grounded reference.</p>
+<h3 id="hit_ratereturns-threshold00"><code>hit_rate(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Fraction of periods that beat the threshold; <span class="arithmatex">\(\in [0, 1]\)</span>.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{HR}(\tau) = \frac{1}{n} \sum_{t=1}^{n} \mathbf{1}\{r_t &gt; \tau\}
+\]</div>
+<hr />
+<h3 id="average_winreturns-threshold00-average_lossreturns-threshold00"><code>average_win(returns, *, threshold=0.0)</code> / <code>average_loss(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Mean of returns strictly above (resp. below) <span class="arithmatex">\(\tau\)</span>. <code>NaN</code> if
+no observation meets the criterion.</p>
+<p><strong>Formula.</strong> Let <span class="arithmatex">\(\mathcal{W} = \{t : r_t &gt; \tau\}\)</span> and
+<span class="arithmatex">\(\mathcal{L} = \{t : r_t &lt; \tau\}\)</span>. Then</p>
+<div class="arithmatex">\[
+\overline{W}(\tau) = \frac{1}{|\mathcal{W}|} \sum_{t \in \mathcal{W}} r_t, \qquad
+\overline{L}(\tau) = \frac{1}{|\mathcal{L}|} \sum_{t \in \mathcal{L}} r_t.
+\]</div>
+<hr />
+<h3 id="win_loss_ratioreturns-threshold00"><code>win_loss_ratio(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Average win over absolute average loss. <code>NaN</code> if either side
+is <code>NaN</code> or the denominator is zero.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{WLR}(\tau) = \frac{\overline{W}(\tau)}{|\overline{L}(\tau)|}
+\]</div>
+<hr />
+<h3 id="profit_factorreturns-threshold00"><code>profit_factor(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Gross gains over gross losses around <span class="arithmatex">\(\tau\)</span>. <code>NaN</code> when the
+denominator is zero.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+\text{PF}(\tau) = \frac{\sum_{t : r_t &gt; \tau} r_t}{\left|\sum_{t : r_t &lt; \tau} r_t\right|}
+\]</div>
+<p><strong>Source.</strong> Pardo, <em>The Evaluation and Optimization of Trading Strategies</em>,
+2nd ed. (Wiley, 2008), ch. 12.</p>
+<hr />
+<h3 id="best_periodreturns-worst_periodreturns"><code>best_period(returns)</code> / <code>worst_period(returns)</code></h3>
+<p><strong>Definition.</strong> Maximum / minimum single-period return.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+r_{\max} = \max_t r_t, \qquad r_{\min} = \min_t r_t.
+\]</div>
+<hr />
+<h3 id="longest_winning_streakreturns-threshold00-longest_losing_streakreturns-threshold00"><code>longest_winning_streak(returns, *, threshold=0.0)</code> / <code>longest_losing_streak(returns, *, threshold=0.0)</code></h3>
+<p><strong>Definition.</strong> Longest run of consecutive periods strictly above (winning) or
+strictly below (losing) <span class="arithmatex">\(\tau\)</span>. Periods exactly equal to <span class="arithmatex">\(\tau\)</span> break the
+streak.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+S_{\text{win}}(\tau) = \max_{(a,b)} \{\, b - a + 1 \;:\; r_t &gt; \tau \;\forall\, t \in [a, b]\,\},
+\]</div>
+<div class="arithmatex">\[
+S_{\text{lose}}(\tau) = \max_{(a,b)} \{\, b - a + 1 \;:\; r_t &lt; \tau \;\forall\, t \in [a, b]\,\}.
+\]</div>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Strict inequality breaks streaks at <span class="arithmatex">\(\tau\)</span> — a deliberate convention.</li>
+<li>Sample-frequency-dependent (daily streaks ≠ monthly streaks).</li>
+</ul>
+<hr />
+<h2 id="9-rolling-variants-ruinrolling">9. Rolling Variants (<code>ruin.rolling</code>)</h2>
+<p>Every <code>rolling_*</code> function returns a Polars <code>Series</code> cast to <strong>Float32</strong>,
+length-aligned to the input, with the leading <span class="arithmatex">\(w - 1\)</span> values null. Internally
+all accumulation runs in Float64.</p>
+<p>For a window of size <span class="arithmatex">\(w\)</span> and a scalar metric <span class="arithmatex">\(f\)</span> defined on a window's
+returns, the rolling metric at time <span class="arithmatex">\(t\)</span> is</p>
+<div class="arithmatex">\[
+f^{\text{roll}}_t = f\!\left(r_{t - w + 1},\, r_{t - w + 2},\, \dots,\, r_t\right) \quad \text{for } t \ge w,
+\]</div>
+<p>with <code>null</code> emitted whenever the valid (NaN-dropped) sample within the window
+is below <code>min_periods</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Underlying scalar metric</th>
+<th>Window type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rolling_volatility</code></td>
+<td><code>volatility</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_downside_deviation</code></td>
+<td><code>downside_deviation</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_sharpe</code></td>
+<td><code>sharpe_ratio</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_sortino</code></td>
+<td><code>sortino_ratio</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_beta</code></td>
+<td><code>beta</code></td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_correlation</code></td>
+<td><code>correlation</code></td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_tracking_error</code></td>
+<td><code>tracking_error</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_alpha</code></td>
+<td><code>alpha</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_skewness</code></td>
+<td><code>skewness</code> (unbiased)</td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_excess_kurtosis</code></td>
+<td><code>excess_kurtosis</code> (unbiased)</td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_autocorrelation</code></td>
+<td><code>autocorrelation</code></td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_max_drawdown</code></td>
+<td><code>max_drawdown</code></td>
+<td>int only</td>
+</tr>
+<tr>
+<td><code>rolling_hit_rate</code></td>
+<td><code>hit_rate</code></td>
+<td>int or duration string</td>
+</tr>
+<tr>
+<td><code>rolling_profit_factor</code></td>
+<td><code>profit_factor</code></td>
+<td>int only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conventions.</strong> <code>min_periods</code> defaults to <code>window</code> for integer windows. NaNs
+inside a window are <em>not</em> dropped for the simple Polars-native rolls
+(<code>rolling_volatility</code>, etc.); for path-dependent metrics implemented via
+<code>_window_apply</code> (skew, kurtosis, max-drawdown, profit factor,
+autocorrelation), each window's NaN/null entries are dropped before the
+metric runs.</p>
+<p><strong>Assumptions.</strong> Within-window stationarity. Each window is a plug-in
+estimator of the underlying metric — small windows produce noisy estimates of
+higher moments.</p>
+<p><strong>Source.</strong> Standard rolling-window construction; see Tsay (2010) §2.7.</p>
+<hr />
+<h2 id="10-period-slicing-rate-conversion-ruinperiods">10. Period Slicing &amp; Rate Conversion (<code>ruin.periods</code>)</h2>
+<p>These are deterministic plumbing for metric pipelines, not statistical
+metrics, but they appear in formulas above.</p>
+<h3 id="mtd-qtd-ytdreturns-date_col-as_ofnone"><code>mtd / qtd / ytd(returns, *, date_col, as_of=None)</code></h3>
+<p><strong>Definition.</strong> Filter rows whose date lies in the current month / quarter /
+year up to <code>as_of</code> (defaults to <code>datetime.date.today()</code>).</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(d_t\)</span> the date of row <span class="arithmatex">\(t\)</span>, reference date <span class="arithmatex">\(d^{\star}\)</span>, and
+<span class="arithmatex">\(d_{\text{start}}(d^{\star})\)</span> the first day of the corresponding month /
+quarter / year,</p>
+<div class="arithmatex">\[
+\{t \;:\; d_{\text{start}}(d^{\star}) \le d_t \le d^{\star}\}.
+\]</div>
+<hr />
+<h3 id="trailingreturns-n-date_colnone"><code>trailing(returns, *, n, date_col=None)</code></h3>
+<p><strong>Definition.</strong> Last <span class="arithmatex">\(n\)</span> rows. Pass a sorted DataFrame; <code>date_col</code> is accepted
+for API symmetry but unused. Raises if <span class="arithmatex">\(n \le 0\)</span>.</p>
+<p><strong>Formula.</strong> Index slice <span class="arithmatex">\([N - n, N)\)</span> where <span class="arithmatex">\(N\)</span> is the total row count.</p>
+<hr />
+<h3 id="since_inceptionreturns"><code>since_inception(returns)</code></h3>
+<p><strong>Definition / Formula.</strong> Identity — returns the input unchanged. Provided
+for API symmetry.</p>
+<hr />
+<h3 id="periods_per_year_forfrequency"><code>periods_per_year_for(frequency)</code></h3>
+<p><strong>Definition.</strong> Conventional periods/year mapping for common frequencies.
+Raises on unknown input.</p>
+<table>
+<thead>
+<tr>
+<th>Frequency</th>
+<th><span class="arithmatex">\(q\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D (daily)</td>
+<td>252</td>
+</tr>
+<tr>
+<td>W (weekly)</td>
+<td>52</td>
+</tr>
+<tr>
+<td>M (monthly)</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Q (quarterly)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>A / Y (annual)</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Source.</strong> CFA Institute, <em>Quantitative Investment Analysis</em> §2.</p>
+<hr />
+<h3 id="annual_to_periodicrate-periods_per_year-periodic_to_annualrate-periods_per_year"><code>annual_to_periodic(rate, *, periods_per_year)</code> / <code>periodic_to_annual(rate, *, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Geometric conversion between annualized and per-period rates.</p>
+<p><strong>Formula.</strong></p>
+<div class="arithmatex">\[
+r_{\text{periodic}} = (1 + r_{\text{annual}})^{1/q} - 1, \qquad
+r_{\text{annual}} = (1 + r_{\text{periodic}})^{q} - 1.
+\]</div>
+<p><strong>Assumptions.</strong> Geometric compounding with a constant rate across all
+periods. <code>periods_per_year &gt; 0</code> is enforced.</p>
+<hr />
+<h2 id="11-inference-ruininference">11. Inference (<code>ruin.inference</code>)</h2>
+<h3 id="sharpe_standard_errorreturns-periods_per_year"><code>sharpe_standard_error(returns, *, periods_per_year)</code></h3>
+<p><strong>Definition.</strong> Lo (2002) autocorrelation-adjusted standard error of the
+<strong>annualized</strong> Sharpe ratio.</p>
+<p><strong>Formula.</strong> With per-period <span class="arithmatex">\(\widehat{\text{SR}}_q = \bar r / \sigma\)</span> and
+lag-1 autocorrelation <span class="arithmatex">\(\hat\rho_1\)</span>,</p>
+<div class="arithmatex">\[
+\widehat{\text{SE}}\!\left(\widehat{\text{SR}}_{\text{ann}}\right)
+\;\approx\;
+\sqrt{\frac{1 + 2\,\hat\rho_1\,\widehat{\text{SR}}_q^{\,2}}{n}} \cdot \sqrt{q}.
+\]</div>
+<p>Reduces to <span class="arithmatex">\(\sqrt{q / n}\)</span> under i.i.d. returns. Returns <code>NaN</code> when
+<span class="arithmatex">\(\sigma = 0\)</span>; requires <span class="arithmatex">\(n \ge 4\)</span>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Returns are stationary.</li>
+<li>Adjusts for first-order autocorrelation only — higher-order serial
+  dependence still biases the estimator.</li>
+</ul>
+<p><strong>Source.</strong> Lo, "The Statistics of Sharpe Ratios," <em>Financial Analysts
+Journal</em> 58(4), 2002 (eq. 12).</p>
+<hr />
+<h3 id="sharpe_confidence_intervalreturns-periods_per_year-confidence095"><code>sharpe_confidence_interval(returns, *, periods_per_year, confidence=0.95)</code></h3>
+<p><strong>Definition.</strong> Asymptotic Wald confidence interval for the annualized Sharpe
+ratio.</p>
+<p><strong>Formula.</strong> With <span class="arithmatex">\(z_{c} = \Phi^{-1}\!\left(\tfrac{1 + c}{2}\right)\)</span>,</p>
+<div class="arithmatex">\[
+\text{CI}_c \;=\; \left(\widehat{\text{SR}}_{\text{ann}} - z_c \cdot \widehat{\text{SE}},\ \widehat{\text{SR}}_{\text{ann}} + z_c \cdot \widehat{\text{SE}}\right).
+\]</div>
+<p><strong>Assumptions.</strong> Asymptotic Normality of the Sharpe estimator (best with
+<span class="arithmatex">\(n \ge \sim 60\)</span>).</p>
+<p><strong>Source.</strong> Lo (2002).</p>
+<hr />
+<h3 id="bootstrap_metricfn-returns-n_samples1000-confidence095-seednone"><code>bootstrap_metric(fn, returns, *, n_samples=1000, confidence=0.95, seed=None)</code></h3>
+<p><strong>Definition.</strong> Percentile-method bootstrap CI for any scalar metric.
+Returns <code>(point, lower, upper)</code>. The point estimate is <code>fn(returns)</code> on the
+original sample.</p>
+<p><strong>Formula.</strong> Draw <span class="arithmatex">\(B\)</span> resamples <span class="arithmatex">\(r^{(b)}_1, \dots, r^{(b)}_n\)</span> i.i.d. with
+replacement from <span class="arithmatex">\(\{r_t\}\)</span>. Compute <span class="arithmatex">\(\hat\theta^{(b)} = f(r^{(b)})\)</span>. Sort to
+<span class="arithmatex">\(\hat\theta^{(1)} \le \dots \le \hat\theta^{(B^{\star})}\)</span> (using only <span class="arithmatex">\(B^{\star}\)</span>
+non-failing resamples). With <span class="arithmatex">\(\alpha = 1 - c\)</span>,</p>
+<div class="arithmatex">\[
+\text{CI}_c \;=\; \left(\hat\theta^{(\lfloor (\alpha/2) \cdot B^{\star} \rfloor)},\ \hat\theta^{(\lceil (1 - \alpha/2) \cdot B^{\star} \rceil - 1)}\right).
+\]</div>
+<p>If every resample raises (<code>ValueError</code> or <code>ZeroDivisionError</code>), the bounds
+degenerate to <code>(NaN, NaN)</code>.</p>
+<p><strong>Assumptions.</strong></p>
+<ul>
+<li>Observations are i.i.d. — i.i.d. resampling destroys serial dependence; for
+  autocorrelated returns use a block bootstrap (not provided).</li>
+<li><code>fn</code> accepts a <code>pl.Series</code> and returns a <code>float</code>.</li>
+</ul>
+<p><strong>Source.</strong> Efron &amp; Tibshirani, <em>An Introduction to the Bootstrap</em> (Chapman &amp;
+Hall, 1993), ch. 13 (percentile method).</p>
+<hr />
+<h2 id="12-bundled-report-ruinreport">12. Bundled Report (<code>ruin.report</code>)</h2>
+<h3 id="summaryreturns-benchmarknone-risk_free00-periods_per_year-strictfalse"><code>summary(returns, benchmark=None, *, risk_free=0.0, periods_per_year, strict=False)</code></h3>
+<p><strong>Definition.</strong> Computes every scalar metric above for one return stream — or
+one row per column when given a DataFrame. Benchmark-relative columns are
+<code>null</code> when no benchmark is supplied. <code>strict=True</code> raises on NaN/null input
+instead of dropping. Float64 output columns are downcast to Float32 for the
+public <code>pl.DataFrame</code> return type, in line with the dtype policy in
+<code>.claude/CLAUDE.md</code>.</p>
+<p><strong>Formula.</strong> For each column <span class="arithmatex">\(c\)</span> and metric function <span class="arithmatex">\(f \in \mathcal{F}\)</span>,</p>
+<div class="arithmatex">\[
+\text{summary}[c, f] \;=\; \begin{cases} f(r_c) &amp; \text{if no exception,} \\ \text{NaN} &amp; \text{if } f \text{ raises } (\texttt{ValueError},\ \texttt{ZeroDivisionError}). \end{cases}
+\]</div>
+<p>This is the <strong>only</strong> bundled function in <code>ruin</code> — every other public symbol
+is a single-metric building block.</p>
+<p><strong>Source.</strong> Composition pattern internal to <code>ruin</code>; see <code>report.py</code>.</p>
+<hr />
+<h2 id="definition-implementation-audit">Definition ↔ Implementation Audit</h2>
+<p>The following table verifies that the formula stated above matches the actual
+behaviour in source. Each row records the source location and any caveat that
+materially alters the textbook formula.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Source location</th>
+<th>Match?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_prices</code></td>
+<td><code>returns.py:16</code></td>
+<td>✅</td>
+<td>Drops the leading null produced by <code>shift(1)</code> and any NaN; raises if any price ≤ 0.</td>
+</tr>
+<tr>
+<td><code>total_return</code></td>
+<td><code>returns.py:26</code></td>
+<td>✅</td>
+<td>Direct <code>(1 + r).product() − 1</code>.</td>
+</tr>
+<tr>
+<td><code>annualize_return</code> (geo)</td>
+<td><code>returns.py:33</code></td>
+<td>✅ + edge case</td>
+<td>Returns <code>NaN</code> when total return ≤ −1, avoiding fractional powers of negatives.</td>
+</tr>
+<tr>
+<td><code>annualize_return</code> (arith)</td>
+<td><code>returns.py:55</code></td>
+<td>✅</td>
+<td><code>mean(r) * q</code>.</td>
+</tr>
+<tr>
+<td><code>cagr</code></td>
+<td><code>returns.py:60</code></td>
+<td>✅</td>
+<td>Pure alias.</td>
+</tr>
+<tr>
+<td><code>volatility</code></td>
+<td><code>volatility.py:8</code></td>
+<td>✅</td>
+<td><code>Series.std(ddof=ddof)</code>.</td>
+</tr>
+<tr>
+<td><code>annualize_volatility</code></td>
+<td><code>volatility.py:15</code></td>
+<td>✅</td>
+<td><code>volatility · √q</code>; validates <code>q &gt; 0</code>.</td>
+</tr>
+<tr>
+<td><code>downside_deviation</code></td>
+<td><code>volatility.py:27</code></td>
+<td>✅</td>
+<td>All-periods denominator with <code>ddof=0</code> — Sortino convention.</td>
+</tr>
+<tr>
+<td><code>semi_deviation</code></td>
+<td><code>volatility.py:48</code></td>
+<td>✅</td>
+<td>Restricted to negative returns; returns 0 when there are none.</td>
+</tr>
+<tr>
+<td><code>drawdown_series</code></td>
+<td><code>drawdown.py:15</code></td>
+<td>✅</td>
+<td>Prepends initial wealth = 1 so first-period losses register as drawdowns.</td>
+</tr>
+<tr>
+<td><code>max_drawdown</code></td>
+<td><code>drawdown.py:27</code></td>
+<td>✅</td>
+<td><code>min(drawdown_series)</code>.</td>
+</tr>
+<tr>
+<td><code>average_drawdown</code></td>
+<td><code>drawdown.py:33</code></td>
+<td>✅</td>
+<td>Episode = contiguous underwater run, separated by <code>dd ≥ 0</code>.</td>
+</tr>
+<tr>
+<td><code>max_drawdown_duration</code></td>
+<td><code>drawdown.py:61</code></td>
+<td>✅</td>
+<td>Longest count of consecutive <code>dd &lt; 0</code> periods.</td>
+</tr>
+<tr>
+<td><code>recovery_time</code></td>
+<td><code>drawdown.py:76</code></td>
+<td>✅</td>
+<td>First subsequent index with <code>dd ≥ 0</code> after the trough; <code>NaN</code> if unrecovered, <code>0.0</code> if no drawdown.</td>
+</tr>
+<tr>
+<td><code>time_underwater</code></td>
+<td><code>drawdown.py:98</code></td>
+<td>✅</td>
+<td>Count of <code>dd &lt; 0</code> periods.</td>
+</tr>
+<tr>
+<td><code>drawdown_start</code></td>
+<td><code>drawdown.py:104</code></td>
+<td>✅</td>
+<td>Walks back from trough to the last <code>dd ≥ 0</code>; <code>0</code> if no drawdown.</td>
+</tr>
+<tr>
+<td><code>drawdown_end</code></td>
+<td><code>drawdown.py:125</code></td>
+<td>✅</td>
+<td>Index of the trough (first occurrence of <code>min</code>).</td>
+</tr>
+<tr>
+<td><code>sharpe_ratio</code></td>
+<td><code>ratios.py:17</code></td>
+<td>✅</td>
+<td>Annualized; <code>NaN</code> when annualized vol = 0.</td>
+</tr>
+<tr>
+<td><code>sortino_ratio</code></td>
+<td><code>ratios.py:35</code></td>
+<td>✅</td>
+<td>Uses <code>downside_deviation</code> (ddof=0, all-periods denominator); threshold defaults to <code>risk_free</code>.</td>
+</tr>
+<tr>
+<td><code>calmar_ratio</code></td>
+<td><code>ratios.py:57</code></td>
+<td>✅</td>
+<td><code>CAGR / |max_drawdown|</code>. Full-sample window (not 36-month).</td>
+</tr>
+<tr>
+<td><code>information_ratio</code></td>
+<td><code>ratios.py:68</code></td>
+<td>✅</td>
+<td>Uses <code>align_benchmark</code>; annualized.</td>
+</tr>
+<tr>
+<td><code>treynor_ratio</code></td>
+<td><code>ratios.py:85</code></td>
+<td>✅</td>
+<td><code>NaN</code> when <code>β = 0</code>.</td>
+</tr>
+<tr>
+<td><code>omega_ratio</code></td>
+<td><code>ratios.py:101</code></td>
+<td>✅</td>
+<td>Sum-of-gains over sum-of-losses; <code>NaN</code> if no downside.</td>
+</tr>
+<tr>
+<td><code>value_at_risk</code> (hist)</td>
+<td><code>tail.py:9</code></td>
+<td>✅</td>
+<td><code>−Q_{1−c}</code> via <code>Series.quantile(..., interpolation="linear")</code>.</td>
+</tr>
+<tr>
+<td><code>value_at_risk</code> (param)</td>
+<td><code>tail.py:28</code></td>
+<td>✅</td>
+<td><code>−(μ + Φ⁻¹(α)·σ)</code> with sample <code>ddof=1</code>.</td>
+</tr>
+<tr>
+<td><code>conditional_value_at_risk</code> (hist)</td>
+<td><code>tail.py:53</code></td>
+<td>✅ + edge case</td>
+<td>Falls back to <code>−Q_{1−c}</code> if no observation lies at or below the quantile.</td>
+</tr>
+<tr>
+<td><code>conditional_value_at_risk</code> (param)</td>
+<td><code>tail.py:59</code></td>
+<td>✅</td>
+<td>Closed-form Gaussian ES via local <code>norm_pdf</code> / <code>norm_ppf</code>.</td>
+</tr>
+<tr>
+<td><code>beta</code></td>
+<td><code>market.py:10</code></td>
+<td>✅</td>
+<td>Manual <code>cov / var</code> with <code>ddof=1</code>.</td>
+</tr>
+<tr>
+<td><code>downside_beta</code></td>
+<td><code>market.py:30</code></td>
+<td>✅</td>
+<td>Conditioned on <code>b &lt; 0</code>; needs ≥ 2 observations.</td>
+</tr>
+<tr>
+<td><code>upside_beta</code></td>
+<td><code>market.py:45</code></td>
+<td>✅</td>
+<td>Conditioned on <code>b &gt; 0</code>; needs ≥ 2 observations.</td>
+</tr>
+<tr>
+<td><code>alpha</code></td>
+<td><code>market.py:60</code></td>
+<td>✅</td>
+<td>Annualized Jensen's alpha using <code>align_benchmark</code>.</td>
+</tr>
+<tr>
+<td><code>tracking_error</code></td>
+<td><code>market.py:77</code></td>
+<td>✅</td>
+<td>Annualized std of active returns.</td>
+</tr>
+<tr>
+<td><code>correlation</code></td>
+<td><code>market.py:90</code></td>
+<td>✅</td>
+<td>Polars <code>pl.corr</code> over the aligned pair.</td>
+</tr>
+<tr>
+<td><code>up_capture</code></td>
+<td><code>market.py:98</code></td>
+<td>✅</td>
+<td>Geometric on <code>b &gt; 0</code> periods.</td>
+</tr>
+<tr>
+<td><code>down_capture</code></td>
+<td><code>market.py:113</code></td>
+<td>✅</td>
+<td>Symmetric to up-capture on <code>b &lt; 0</code>.</td>
+</tr>
+<tr>
+<td><code>skewness</code></td>
+<td><code>distribution.py:29</code></td>
+<td>✅</td>
+<td>Fisher-Pearson unbiased; biased option matches biased formula; <code>NaN</code> when constant.</td>
+</tr>
+<tr>
+<td><code>excess_kurtosis</code></td>
+<td><code>distribution.py:53</code></td>
+<td>✅</td>
+<td>Excel KURT formula in unbiased path; biased subtracts 3.</td>
+</tr>
+<tr>
+<td><code>jarque_bera</code></td>
+<td><code>distribution.py:78</code></td>
+<td>✅</td>
+<td>Uses <strong>biased</strong> S and K (matches the original paper). χ²(2) p-value via <code>exp(−JB/2)</code>.</td>
+</tr>
+<tr>
+<td><code>autocorrelation</code></td>
+<td><code>distribution.py:97</code></td>
+<td>✅</td>
+<td>Pearson on <code>r[lag:]</code> vs. <code>r[:n−lag]</code>; validates <code>lag ≥ 1</code>.</td>
+</tr>
+<tr>
+<td><code>hit_rate</code></td>
+<td><code>activity.py:8</code></td>
+<td>✅</td>
+<td>Strict inequality <code>r &gt; τ</code>.</td>
+</tr>
+<tr>
+<td><code>average_win</code></td>
+<td><code>activity.py:15</code></td>
+<td>✅</td>
+<td><code>r &gt; τ</code>; <code>NaN</code> if none.</td>
+</tr>
+<tr>
+<td><code>average_loss</code></td>
+<td><code>activity.py:24</code></td>
+<td>✅</td>
+<td><code>r &lt; τ</code>; <code>NaN</code> if none.</td>
+</tr>
+<tr>
+<td><code>win_loss_ratio</code></td>
+<td><code>activity.py:33</code></td>
+<td>✅</td>
+<td><code>NaN</code> propagation handled.</td>
+</tr>
+<tr>
+<td><code>profit_factor</code></td>
+<td><code>activity.py:44</code></td>
+<td>✅</td>
+<td>Ratio of gross gains to gross losses around <code>τ</code>.</td>
+</tr>
+<tr>
+<td><code>best_period</code> / <code>worst_period</code></td>
+<td><code>activity.py:55–66</code></td>
+<td>✅</td>
+<td><code>Series.max()</code> / <code>Series.min()</code>.</td>
+</tr>
+<tr>
+<td><code>longest_winning_streak</code> / <code>losing_streak</code></td>
+<td><code>activity.py:69–96</code></td>
+<td>✅</td>
+<td>Strict inequality; equality at <code>τ</code> breaks the streak.</td>
+</tr>
+<tr>
+<td><code>rolling_*</code> (native)</td>
+<td><code>rolling.py:90–216</code></td>
+<td>✅</td>
+<td>Use Polars <code>rolling_*</code>; min-samples defaults to <code>window</code> for int windows; output cast to Float32.</td>
+</tr>
+<tr>
+<td><code>rolling_skewness / kurtosis / autocorr / max_drawdown / profit_factor</code></td>
+<td><code>rolling.py:244–331</code></td>
+<td>✅</td>
+<td>Use <code>_window_apply</code>; drop within-window NaNs; emit null when valid count <code>&lt; min_periods</code>.</td>
+</tr>
+<tr>
+<td><code>rolling_alpha</code></td>
+<td><code>rolling.py:219</code></td>
+<td>✅</td>
+<td>Composed from rolling means + rolling beta.</td>
+</tr>
+<tr>
+<td><code>rolling_tracking_error</code></td>
+<td><code>rolling.py:198</code></td>
+<td>✅</td>
+<td>Annualized rolling std of active returns.</td>
+</tr>
+<tr>
+<td><code>mtd / qtd / ytd</code></td>
+<td><code>periods.py:10–56</code></td>
+<td>✅</td>
+<td>Inclusive lower and upper bounds; <code>as_of</code> defaults to today.</td>
+</tr>
+<tr>
+<td><code>trailing</code></td>
+<td><code>periods.py:59</code></td>
+<td>✅</td>
+<td><code>Series.tail(n)</code>; raises if <code>n ≤ 0</code>.</td>
+</tr>
+<tr>
+<td><code>since_inception</code></td>
+<td><code>periods.py:71</code></td>
+<td>✅</td>
+<td>Identity.</td>
+</tr>
+<tr>
+<td><code>periods_per_year_for</code></td>
+<td><code>periods.py:86</code></td>
+<td>✅</td>
+<td>Mapping matches the convention table; raises on unknown frequency.</td>
+</tr>
+<tr>
+<td><code>annual_to_periodic</code> / <code>periodic_to_annual</code></td>
+<td><code>periods.py:96–107</code></td>
+<td>✅</td>
+<td>Geometric, validates <code>q &gt; 0</code>.</td>
+</tr>
+<tr>
+<td><code>sharpe_standard_error</code></td>
+<td><code>inference.py:17</code></td>
+<td>✅</td>
+<td>Lo (2002) eq (12); <code>NaN</code> when σ = 0; needs <code>n ≥ 4</code>.</td>
+</tr>
+<tr>
+<td><code>sharpe_confidence_interval</code></td>
+<td><code>inference.py:44</code></td>
+<td>✅</td>
+<td>Wald CI using <code>Φ⁻¹((1+c)/2)</code>.</td>
+</tr>
+<tr>
+<td><code>bootstrap_metric</code></td>
+<td><code>inference.py:58</code></td>
+<td>✅</td>
+<td>i.i.d. percentile bootstrap; silently skips resamples raising <code>(ValueError, ZeroDivisionError)</code>; <code>(NaN, NaN)</code> if all fail.</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>report.py:51</code></td>
+<td>✅</td>
+<td>Calls every scalar metric through <code>_safe</code>; Float64 columns downcast to Float32.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="observations-from-the-audit">Observations from the audit</h3>
+<ol>
+<li><strong>Every metric in this document is implemented exactly as stated</strong>, modulo
+   four documented edge cases:</li>
+<li><code>annualize_return</code> returns <code>NaN</code> on a wiped-out track record
+     (<span class="arithmatex">\(R_{\text{tot}} \le -1\)</span>) instead of raising.</li>
+<li><code>recovery_time</code> returns <code>NaN</code> on unrecovered series and <span class="arithmatex">\(0\)</span> when no
+     drawdown ever occurred.</li>
+<li>Historical <code>conditional_value_at_risk</code> falls back to <span class="arithmatex">\(-\hat Q_{1-c}\)</span> when
+     no return is at or below the quantile.</li>
+<li>
+<p><code>bootstrap_metric</code> silently drops resamples raising
+     <code>(ValueError, ZeroDivisionError)</code> and returns <code>(NaN, NaN)</code> bounds if
+     everything fails.</p>
+</li>
+<li>
+<p><strong>Convention choices to keep in mind when comparing to other libraries.</strong></p>
+</li>
+<li><code>downside_deviation</code> uses the Sortino all-periods denominator with
+     <code>ddof=0</code> (matches <code>pyfolio</code> / <code>empyrical</code>).</li>
+<li><code>jarque_bera</code> uses <strong>biased</strong> skew / kurtosis to match the original
+     paper — same as <code>scipy.stats.jarque_bera</code>.</li>
+<li><code>skewness</code> / <code>excess_kurtosis</code> default to <strong>unbiased</strong> (SAS / SPSS /
+     Excel). Pass <code>bias=True</code> for the population estimators.</li>
+<li><code>calmar_ratio</code> uses the full sample, not the canonical 36-month window.</li>
+<li>
+<p><code>sharpe_standard_error</code> is Lo (2002)'s first-order correction only.</p>
+</li>
+<li>
+<p><strong>Dtype contract.</strong> All public <code>pl.Series</code> / <code>pl.DataFrame</code> outputs are
+   <code>Float32</code>; scalar Python returns remain <code>float</code> (Float64 semantics).
+   Internal accumulation runs in <code>Float64</code>. Matches the policy in
+   <code>.claude/CLAUDE.md</code>.</p>
+</li>
+<li>
+<p><strong>No undocumented metric is exposed by the package.</strong> The functions in
+   <code>_internal/</code> (<code>norm_ppf</code>, <code>norm_pdf</code>, <code>align_benchmark</code>, etc.) are
+   helpers, not metrics, and live behind a leading-underscore namespace.</p>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../conventions/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Conventions">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Conventions
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Contributing
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Antônio Salomão
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/aexsalomao/ruin" target="_blank" rel="noopener" title="GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://pypi.org/project/pyruin/" target="_blank" rel="noopener" title="PyPI" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "content.action.edit", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
