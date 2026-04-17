@@ -1,8 +1,7 @@
 # Metrics Reference
 
-Authoritative definitions for every metric exposed by `ruin`, paired with the
-assumptions baked into each formula and the academic / industry sources that
-motivate them.
+Authoritative definitions, mathematical formulas, modelling assumptions, and
+citations for every metric exposed by `ruin`.
 
 The library follows the conventions set out in
 [`docs/conventions.md`](conventions.md):
@@ -11,17 +10,33 @@ The library follows the conventions set out in
 - Drawdowns are non-positive (`-0.23` = 23% drawdown).
 - VaR / CVaR are positive loss magnitudes (`0.02` = "lose at most 2%").
 - `risk_free` is **per-period**, never annualized.
-- NaN / null are dropped before computation; benchmark inputs must be
+- NaN / null values are dropped before computation; benchmark inputs must be
   pre-aligned in length.
 
-Symbols used throughout this document:
+### Notation
 
-- `r_t` — return in period `t` (a fraction)
-- `n` — number of return observations after NaN drop
-- `q` — `periods_per_year` (annualization factor; e.g. 252 for daily)
-- `r_f` — per-period risk-free rate
-- `b_t` — benchmark return in period `t`
-- `1{·}` — indicator function
+| Symbol | Meaning |
+|---|---|
+| $r_t$ | period-$t$ return (a fraction) |
+| $\bar r$ | sample mean of $\{r_t\}$ |
+| $n$ | number of return observations after NaN drop |
+| $q$ | `periods_per_year` (annualization factor; e.g. 252 for daily) |
+| $r_f$ | per-period risk-free rate |
+| $\tau$ | per-period threshold or minimum acceptable return (MAR) |
+| $b_t$ | benchmark return in period $t$ |
+| $\sigma$ | sample standard deviation, `ddof=1` unless noted otherwise |
+| $W_t$ | cumulative wealth $\prod_{s \le t}(1 + r_s)$ |
+| $H_t$ | running high-water mark $\max_{s \le t} W_s$ |
+| $D_t$ | period-$t$ drawdown $W_t / H_t - 1 \le 0$ |
+| $\Phi(\cdot), \varphi(\cdot)$ | standard normal CDF / PDF |
+| $\mathbf{1}\{\cdot\}$ | indicator function |
+
+Each metric below follows the same template:
+
+> **Definition.** What the function computes in one sentence.
+> **Formula.** The mathematical expression.
+> **Assumptions.** When the metric is reliable and how it can mislead.
+> **Source(s).** Primary academic / industry references.
 
 ---
 
@@ -29,72 +44,89 @@ Symbols used throughout this document:
 
 ### `from_prices(prices, *, log=False)`
 
-Convert a positive price series of length `N` into `N − 1` period returns.
+**Definition.** Convert a positive price series of length $N$ into $N - 1$
+period returns; simple by default, log if `log=True`.
 
-- **Simple** (default): `r_t = P_t / P_{t-1} − 1`
-- **Log**: `r_t = ln(P_t / P_{t-1})`
+**Formula.**
 
-**Source.** Standard textbook definitions; e.g. Tsay, *Analysis of Financial
-Time Series*, 3rd ed. (Wiley, 2010), §1.1.
+$$
+r_t^{\text{simple}} = \frac{P_t}{P_{t-1}} - 1, \qquad
+r_t^{\text{log}} = \ln\!\left(\frac{P_t}{P_{t-1}}\right)
+$$
 
 **Assumptions.**
 
-- Prices are strictly positive (dividends folded in via total-return prices, if
-  desired). The function raises if any price ≤ 0.
-- Equal time-spacing between observations — annualization downstream depends on
-  it.
+- Prices are strictly positive; the function raises if any $P_t \le 0$.
+- Equal time-spacing between observations.
 - Log returns are time-additive but not portfolio-additive; simple returns are
   portfolio-additive but not time-additive.
+
+**Source.** Tsay, *Analysis of Financial Time Series*, 3rd ed. (Wiley, 2010),
+§1.1.
 
 ---
 
 ### `total_return(returns)`
 
-Cumulative compounded return over the sample.
+**Definition.** Cumulative compounded return over the full sample.
+
+**Formula.**
 
 $$
 R_{\text{tot}} = \prod_{t=1}^{n} (1 + r_t) - 1
 $$
 
-**Source.** Bodie, Kane & Marcus, *Investments*, 12th ed. (McGraw-Hill, 2021),
-ch. 5.
-
 **Assumptions.**
 
-- Returns reinvest at the realized rate each period (compounding assumption).
-- Path-dependent: a single trade quote at the boundaries can dominate the
-  result. Carries no risk information.
+- Returns reinvest at the realized rate each period.
+- Path-dependent and uninformative about risk.
+
+**Source.** Bodie, Kane & Marcus, *Investments*, 12th ed. (McGraw-Hill, 2021),
+ch. 5.
 
 ---
 
 ### `annualize_return(returns, *, periods_per_year, method="geometric")`
 
-Scale the realized return to a one-year horizon.
+**Definition.** Scale the realized return to a one-year horizon, geometrically
+(default) or arithmetically.
 
-- **Geometric** (default):
-  $\,R_{\text{ann}} = (1 + R_{\text{tot}})^{q / n} - 1$. Returns `NaN` when
-  `R_tot ≤ −1` (ruin), avoiding fractional powers of negative numbers.
-- **Arithmetic**: $\,R_{\text{ann}} = \bar r \cdot q$, with
-  $\bar r = \tfrac{1}{n} \sum_t r_t$.
+**Formula.**
 
-**Source.** CFA Institute, *Quantitative Investment Analysis*, 4th ed. (Wiley,
-2020), ch. 1; Meucci, *Risk and Asset Allocation* (Springer, 2005), §3.2.
+$$
+R_{\text{ann}}^{\text{geo}} = (1 + R_{\text{tot}})^{q / n} - 1, \qquad
+R_{\text{ann}}^{\text{arith}} = \bar r \cdot q
+$$
+
+The geometric branch returns `NaN` when $R_{\text{tot}} \le -1$ (ruin), since
+fractional powers of non-positive numbers are undefined.
 
 **Assumptions.**
 
-- The realized period is representative of a typical year (clearly false for
+- The realized period is representative of a typical year (clearly violated on
   short series).
 - Geometric assumes terminal-wealth equivalence under continued compounding.
-- Arithmetic assumes i.i.d. returns and no compounding effects; it overstates
-  expected terminal wealth for volatile strategies.
+- Arithmetic assumes i.i.d. returns; it overstates expected terminal wealth
+  for volatile strategies.
+
+**Source.** CFA Institute, *Quantitative Investment Analysis*, 4th ed. (Wiley,
+2020), ch. 1; Meucci, *Risk and Asset Allocation* (Springer, 2005), §3.2.
 
 ---
 
 ### `cagr(returns, *, periods_per_year)`
 
-Alias for geometric `annualize_return`.
+**Definition.** Compound annual growth rate — alias for the geometric
+`annualize_return`.
 
-**Source.** Same as above. Industry term, no canonical academic origin.
+**Formula.**
+
+$$
+\text{CAGR} = (1 + R_{\text{tot}})^{q / n} - 1
+$$
+
+**Assumptions / Source.** As for geometric `annualize_return`. Industry term;
+no canonical academic origin.
 
 ---
 
@@ -102,160 +134,224 @@ Alias for geometric `annualize_return`.
 
 ### `volatility(returns, *, ddof=1)`
 
-Periodic sample standard deviation:
+**Definition.** Periodic sample standard deviation of returns (not
+annualized).
+
+**Formula.**
 
 $$
 \sigma = \sqrt{\frac{1}{n - \text{ddof}} \sum_{t=1}^{n} (r_t - \bar r)^2}
 $$
 
-**Source.** Markowitz, "Portfolio Selection," *Journal of Finance* 7(1), 1952.
-
 **Assumptions.**
 
-- Returns are i.i.d. and second moment exists.
-- Symmetric loss function: an upside move of size `x` contributes the same as a
-  downside move of size `x` — questionable for skewed strategies.
+- Returns are i.i.d. and the second moment exists.
+- Symmetric loss function — an upside move of size $x$ contributes the same
+  as a downside move of size $x$.
+
+**Source.** Markowitz, "Portfolio Selection," *Journal of Finance* 7(1), 1952.
 
 ---
 
 ### `annualize_volatility(returns, *, periods_per_year, ddof=1)`
 
-$\sigma_{\text{ann}} = \sigma \cdot \sqrt{q}$ — the **square-root-of-time
-rule**.
+**Definition.** Annualized volatility via the square-root-of-time rule.
+
+**Formula.**
+
+$$
+\sigma_{\text{ann}} = \sigma \cdot \sqrt{q}
+$$
+
+**Assumptions.**
+
+- Returns are i.i.d. (zero serial correlation).
+- Under autocorrelation the rule under-/overstates risk; the corrected formula
+  is $\sigma_{\text{ann}} = \sigma \sqrt{q\,(1 + 2\sum_{k=1}^{K} \rho_k)}$
+  (see Lo (2002) below).
 
 **Source.** Diebold, Hickman, Inoue & Schuermann, "Converting 1-day Volatility
 to h-day Volatility: Scaling by √h is Worse than You Think," Wharton FIC
 Working Paper 97-34, 1997.
 
-**Assumptions.**
-
-- Returns are i.i.d. (zero serial correlation).
-- The relation breaks down under autocorrelation. The corrected formula is
-  $\sigma_{\text{ann}} = \sigma \sqrt{q \cdot (1 + 2 \sum_{k=1}^{K} \rho_k)}$
-  (see Lo (2002) below); use `autocorrelation` to diagnose before trusting the
-  annualized value.
-
 ---
 
 ### `downside_deviation(returns, *, threshold=0.0, ddof=0)`
 
-Sortino-convention semi-deviation: only periods with `r_t < threshold`
-contribute to the numerator, but **all** `n` periods are in the denominator.
+**Definition.** Sortino-convention semi-deviation: only periods with
+$r_t < \tau$ contribute to the numerator, but **all** $n$ periods are in the
+denominator.
+
+**Formula.**
 
 $$
-\text{DD} = \sqrt{\frac{1}{n - \text{ddof}} \sum_{t=1}^{n} \min(r_t - \tau, 0)^2}
+\text{DD}_\tau = \sqrt{\frac{1}{n - \text{ddof}} \sum_{t=1}^{n} \min(r_t - \tau,\,0)^2}
 $$
-
-**Source.** Sortino & van der Meer, "Downside Risk," *Journal of Portfolio
-Management* 17(4), 1991. Sortino & Price, "Performance Measurement in a
-Downside Risk Framework," *Journal of Investing* 3(3), 1994.
 
 **Assumptions.**
 
-- A **minimum acceptable return** (MAR) `τ` is the relevant reference point —
-  not the mean.
-- Investors care asymmetrically about losses below `τ`.
-- Default `ddof=0` matches the Sortino convention; use `ddof=1` for
-  sample-style.
+- The MAR $\tau$ is the relevant reference point — not the mean.
+- Investors care asymmetrically about losses below $\tau$.
+- `ddof=0` matches the Sortino convention; pass `ddof=1` for sample-style.
+
+**Source.** Sortino & van der Meer, "Downside Risk," *Journal of Portfolio
+Management* 17(4), 1991; Sortino & Price, "Performance Measurement in a
+Downside Risk Framework," *Journal of Investing* 3(3), 1994.
 
 ---
 
 ### `semi_deviation(returns, *, ddof=0)`
 
-Standard deviation computed only over strictly negative returns (both numerator
-and denominator restricted). Returns 0 when there are no negative returns.
+**Definition.** Standard deviation computed only over strictly negative
+returns (numerator and denominator both restricted). Returns 0 when there are
+no negative returns.
+
+**Formula.** With $n_{-} = \#\{t : r_t < 0\}$ and
+$\bar r_{-} = \frac{1}{n_{-}} \sum_{t : r_t < 0} r_t$,
 
 $$
-\text{SD}_{-} = \sqrt{\frac{1}{n_{-} - \text{ddof}} \sum_{t : r_t < 0} (r_t - \bar r_{-})^2}
+\text{SD}_{-} = \sqrt{\frac{1}{n_{-} - \text{ddof}} \sum_{t \,:\, r_t < 0} (r_t - \bar r_{-})^2}
 $$
-
-where $n_{-}$ is the count of negative observations and $\bar r_{-}$ their
-mean.
-
-**Source.** Markowitz, *Portfolio Selection: Efficient Diversification of
-Investments* (Wiley, 1959), ch. IX (semivariance).
 
 **Assumptions.**
 
-- Behaviour around zero matters more than around the mean — a stronger
-  assumption than Sortino's.
+- Behaviour around zero matters more than around the mean.
 - Sensitive to small samples once the negative-return count is small.
+
+**Source.** Markowitz, *Portfolio Selection: Efficient Diversification of
+Investments* (Wiley, 1959), ch. IX (semivariance).
 
 ---
 
 ## 3. Drawdown (`ruin.drawdown`)
 
-Common quantity used by all functions in this module:
+All drawdown metrics derive from
 
 $$
-W_t = \prod_{s \le t} (1 + r_s), \quad
-H_t = \max_{s \le t} W_s, \quad
-D_t = W_t / H_t - 1 \;(\le 0).
+W_t = \prod_{s \le t}(1 + r_s), \qquad
+H_t = \max_{s \le t} W_s, \qquad
+D_t = \frac{W_t}{H_t} - 1 \le 0.
 $$
 
-The implementation prepends an initial wealth of 1.0 so first-period losses are
-visible as drawdowns.
+The implementation prepends an initial wealth of $1$ so first-period losses
+register as drawdowns.
 
 ### `drawdown_series(returns)`
 
-Length-`n` Polars Series of `D_t`.
+**Definition.** The full drawdown time series $\{D_t\}_{t=1}^{n}$.
+
+**Formula.** As above.
+
+**Assumptions.** Path- and sample-dependent; daily vs. month-end data produce
+different series.
 
 **Source.** Magdon-Ismail & Atiya, "Maximum Drawdown," *Risk Magazine* 17(10),
 2004.
 
+---
+
 ### `max_drawdown(returns)`
 
-$D^{\star} = \min_t D_t$ (non-positive).
+**Definition.** The single worst drawdown observed over the sample.
 
-**Source.** Same as above; widely used since at least Grossman & Zhou,
-"Optimal Investment Strategies for Controlling Drawdowns," *Mathematical
-Finance* 3(3), 1993.
+**Formula.**
 
-**Assumptions.** Path-dependent and sample-dependent — daily vs. month-end
-data produce different numbers; short histories systematically understate the
-worst drawdown.
+$$
+D^{\star} = \min_{1 \le t \le n} D_t \le 0
+$$
+
+**Assumptions.** Short histories systematically understate $|D^{\star}|$.
+
+**Source.** Magdon-Ismail & Atiya (2004); Grossman & Zhou, "Optimal Investment
+Strategies for Controlling Drawdowns," *Mathematical Finance* 3(3), 1993.
+
+---
 
 ### `average_drawdown(returns)`
 
-Mean trough magnitude across distinct drawdown **episodes**, where an episode
-is a contiguous run of `D_t < 0` separated by points where `D_t ≥ 0`. Returns 0
-if there are no drawdowns.
+**Definition.** Mean trough magnitude across distinct drawdown **episodes** —
+contiguous runs of $D_t < 0$ separated by points where $D_t \ge 0$. Returns 0
+when there are no drawdowns.
 
-**Source.** Industry convention; distinct from "average drawdown across all
-underwater periods" used elsewhere. Compatible with the formulation in
-Chekhlov, Uryasev & Zabarankin, "Drawdown Measure in Portfolio Optimization,"
-*International Journal of Theoretical and Applied Finance* 8(1), 2005.
+**Formula.** Let $E_1, \dots, E_K$ index the underwater episodes. Then
 
-**Assumptions.** "Episode" is a definitional choice; alternatives (peak-to-peak
-clustering, threshold filters) yield different numbers.
+$$
+\overline{D} = \frac{1}{K} \sum_{k=1}^{K} \min_{t \in E_k} D_t.
+$$
+
+**Assumptions.** "Episode" is a definitional choice; alternatives
+(peak-to-peak clustering, threshold filters) yield different numbers.
+
+**Source.** Industry convention; compatible with Chekhlov, Uryasev &
+Zabarankin, "Drawdown Measure in Portfolio Optimization," *International
+Journal of Theoretical and Applied Finance* 8(1), 2005.
+
+---
 
 ### `max_drawdown_duration(returns)`
 
-Longest consecutive count of periods spent underwater (`D_t < 0`), in periods.
+**Definition.** Longest consecutive count of periods spent underwater.
 
-**Source.** Magdon-Ismail & Atiya (2004); see also Burghardt, Duncan & Liu,
+**Formula.**
+
+$$
+T^{\text{uw}}_{\max} = \max_{(a,b)} \{\, b - a + 1 \;:\; D_t < 0 \;\forall\, t \in [a, b]\,\}
+$$
+
+**Assumptions.** Equally-spaced periods; units are *periods*, not calendar
+days.
+
+**Source.** Magdon-Ismail & Atiya (2004); Burghardt, Duncan & Liu,
 "Deciphering Drawdowns," *Risk Magazine* 16(9), 2003.
+
+---
 
 ### `recovery_time(returns)`
 
-Number of periods from the maximum-drawdown trough to the first subsequent
-return to a new HWM. Returns `NaN` if the strategy has not recovered by the end
-of the sample (intentional — pretending recovery occurred would be dishonest).
+**Definition.** Number of periods from the maximum-drawdown trough to the
+first subsequent return to a new HWM. `NaN` if the strategy has not recovered
+by the end of the sample, $0$ if no drawdown ever occurred.
+
+**Formula.** With $t^{\star} = \arg\min_t D_t$,
+
+$$
+T^{\text{rec}} = \min\{\, t > t^{\star} \;:\; D_t \ge 0 \,\} - t^{\star},
+$$
+
+returning `NaN` if the set is empty.
 
 **Source.** Burghardt, Duncan & Liu (2003).
 
+---
+
 ### `time_underwater(returns)`
 
-Total count of periods with `D_t < 0`.
+**Definition.** Total number of periods spent below the HWM.
+
+**Formula.**
+
+$$
+T^{\text{uw}} = \sum_{t=1}^{n} \mathbf{1}\{D_t < 0\}
+$$
+
+---
 
 ### `drawdown_start(returns)` / `drawdown_end(returns)`
 
-Zero-based index of the HWM peak immediately preceding the maximum drawdown,
-and the index of the trough itself.
+**Definition.** Zero-based indices of, respectively, the HWM peak immediately
+preceding the maximum drawdown and the trough itself.
 
-**Assumptions for the four index/duration metrics.** Equally-spaced periods;
-the units are *periods*, not calendar days. Convert externally if you need
-calendar-day durations.
+**Formula.** With $t^{\star} = \arg\min_t D_t$,
+
+$$
+t_{\text{start}} = \max\{\, t \le t^{\star} \;:\; D_t \ge 0 \,\}, \qquad
+t_{\text{end}} = t^{\star}.
+$$
+
+**Assumptions.** Discrete period index; for the rare degenerate case of no
+drawdown both functions return $0$.
+
+**Source.** Standard construction; see Magdon-Ismail & Atiya (2004).
 
 ---
 
@@ -263,127 +359,146 @@ calendar-day durations.
 
 ### `sharpe_ratio(returns, *, risk_free=0.0, periods_per_year, ddof=1)`
 
-Annualized excess return per unit of annualized volatility:
+**Definition.** Annualized excess return per unit of annualized volatility of
+excess returns.
+
+**Formula.** Letting $e_t = r_t - r_f$ and $\sigma_e$ its `ddof=1` std,
 
 $$
-\text{SR} = \frac{(\bar r - r_f) \cdot q}{\sigma_{\text{excess}} \cdot \sqrt{q}}
-= \frac{(\bar r - r_f)}{\sigma_{\text{excess}}} \sqrt{q}
+\text{SR} = \frac{q \cdot \bar e}{\sqrt{q} \cdot \sigma_e} = \frac{\bar e}{\sigma_e} \sqrt{q}.
 $$
 
-where $\sigma_{\text{excess}}$ is the sample std (`ddof=1`) of the excess
-return series.
+Returns `NaN` when $\sqrt{q}\,\sigma_e = 0$.
+
+**Assumptions.**
+
+- Returns are i.i.d. and approximately Normal (justifies $\sqrt{q}$ scaling).
+- Symmetric loss function (penalises upside variability equally).
 
 **Source.** Sharpe, "Mutual Fund Performance," *Journal of Business* 39(1),
 1966; Sharpe, "The Sharpe Ratio," *Journal of Portfolio Management* 21(1),
 1994.
 
-**Assumptions.**
-
-- Returns are i.i.d. and approximately normal — used to justify the
-  square-root-of-time annualization.
-- Symmetric loss function (penalises upside variability equally).
-- Stable when `σ` is large relative to numerical noise; returns `NaN` when
-  annualized volatility is zero.
-
 ---
 
 ### `sortino_ratio(returns, *, risk_free=0.0, threshold=None, periods_per_year)`
 
-Annualized excess return per unit of annualized downside deviation. `threshold`
-defaults to `risk_free`; downside deviation uses `ddof=0` and the
-all-periods-in-denominator (Sortino) convention.
+**Definition.** Annualized excess return per unit of annualized downside
+deviation. `threshold` defaults to `risk_free`; downside deviation uses
+`ddof=0` and the all-periods denominator.
+
+**Formula.**
 
 $$
-\text{Sortino} = \frac{(\bar r - r_f) \cdot q}{\text{DD}_\tau \cdot \sqrt{q}}
+\text{Sortino} = \frac{q \cdot \overline{(r - r_f)}}{\sqrt{q} \cdot \text{DD}_\tau}
 $$
-
-**Source.** Sortino & Price (1994); Sortino, *The Sortino Framework for
-Constructing Portfolios* (Elsevier, 2010).
 
 **Assumptions.**
 
-- Investors care about returns below the MAR `τ`, not below the mean.
-- Square-root-of-time annualization of downside deviation — same i.i.d.
-  caveats as Sharpe.
+- Investors care about returns below the MAR $\tau$, not below the mean.
+- $\sqrt{q}$ annualization of $\text{DD}_\tau$ inherits the i.i.d. caveats of
+  Sharpe.
+
+**Source.** Sortino & Price (1994); Sortino, *The Sortino Framework for
+Constructing Portfolios* (Elsevier, 2010).
 
 ---
 
 ### `calmar_ratio(returns, *, periods_per_year)`
 
+**Definition.** Annualized return per unit of maximum drawdown magnitude.
+
+**Formula.**
+
 $$
 \text{Calmar} = \frac{\text{CAGR}}{|D^{\star}|}
 $$
 
-Returns `NaN` if the maximum drawdown is exactly zero.
-
-**Source.** Young, "Calmar Ratio: A Smoother Tool," *Futures Magazine*, 1991.
+Returns `NaN` when $D^{\star} = 0$.
 
 **Assumptions.**
 
-- Max drawdown is a meaningful risk measure for the strategy (path-dependent
-  and small-sample-fragile).
-- Originally defined on a 36-month rolling window; the implementation here
-  uses the full sample. Short histories with no large drawdowns produce
+- $D^{\star}$ is a meaningful summary of risk (path- and sample-dependent).
+- The classical Calmar uses a 36-month rolling window; this implementation
+  uses the full sample. Short histories with no large drawdowns yield
   artificially high Calmar.
+
+**Source.** Young, "Calmar Ratio: A Smoother Tool," *Futures Magazine*, 1991.
 
 ---
 
 ### `information_ratio(returns, benchmark, *, periods_per_year, ddof=1)`
 
-Annualized active return per unit of annualized tracking error:
+**Definition.** Annualized active return per unit of annualized tracking
+error.
+
+**Formula.** Letting $a_t = r_t - b_t$,
 
 $$
-\text{IR} = \frac{\overline{(r_t - b_t)} \cdot q}{\sigma_{r-b} \cdot \sqrt{q}}
+\text{IR} = \frac{q \cdot \bar a}{\sqrt{q} \cdot \sigma_a}
 $$
+
+**Assumptions.**
+
+- Active returns are i.i.d. ($\sqrt{q}$ scaling).
+- Returns and benchmark are pre-aligned in length and time.
 
 **Source.** Goodwin, "The Information Ratio," *Financial Analysts Journal*
 54(4), 1998; Grinold & Kahn, *Active Portfolio Management*, 2nd ed.
 (McGraw-Hill, 2000), ch. 5.
 
-**Assumptions.**
-
-- Active returns are i.i.d. (square-root-of-time again).
-- Returns and benchmark are pre-aligned in length and time.
-
 ---
 
 ### `treynor_ratio(returns, benchmark, *, risk_free=0.0, periods_per_year)`
 
+**Definition.** Annualized excess return per unit of market beta.
+
+**Formula.**
+
 $$
-\text{Treynor} = \frac{(\bar r - r_f) \cdot q}{\beta}
+\text{Treynor} = \frac{q \cdot \overline{(r - r_f)}}{\beta}
 $$
 
-**Source.** Treynor, "How to Rate Management of Investment Funds," *Harvard
-Business Review* 43(1), 1965.
+Returns `NaN` if $\beta = 0$.
 
 **Assumptions.**
 
 - CAPM-style framework: market beta captures all systematic risk.
-- Poorly defined when `β ≈ 0` or negative; returns `NaN` if `β = 0` exactly.
+- Poorly defined when $\beta \approx 0$ or negative.
 - Most informative for diversified, long-only portfolios.
+
+**Source.** Treynor, "How to Rate Management of Investment Funds," *Harvard
+Business Review* 43(1), 1965.
 
 ---
 
 ### `omega_ratio(returns, *, threshold=0.0)`
 
-Probability-weighted ratio of gains to losses around a threshold `τ`:
+**Definition.** Probability-weighted ratio of gains to losses around a
+threshold $\tau$. $\Omega > 1$ iff $\bar r > \tau$ for any distribution with
+finite mean. At $\tau = 0$ it coincides with the profit factor.
+
+**Formula.**
 
 $$
-\Omega(\tau) = \frac{\sum_t \max(r_t - \tau, 0)}{\sum_t \max(\tau - r_t, 0)}
+\Omega(\tau) = \frac{\sum_{t} \max(r_t - \tau,\,0)}{\sum_{t} \max(\tau - r_t,\,0)}
 $$
 
-`Ω > 1` iff `mean(r) > τ` for any distribution with finite mean. At `τ = 0` it
-coincides with the profit factor and the gain-to-pain ratio.
+equivalent to the integral form
 
-**Source.** Keating & Shadwick, "A Universal Performance Measure," *Journal of
-Performance Measurement* 6(3), 2002.
+$$
+\Omega(\tau) = \frac{\int_\tau^{\infty} \bigl(1 - F(x)\bigr)\,dx}{\int_{-\infty}^{\tau} F(x)\,dx}.
+$$
+
+Returns `NaN` when no observations fall strictly below $\tau$.
 
 **Assumptions.**
 
-- Threshold choice is critical — using `r_f` per-period is more economically
-  meaningful than `τ = 0`.
-- Returns `NaN` when no observations fall strictly below `τ` (denominator
-  zero).
+- Threshold choice is critical — using $r_f$ per-period is more economically
+  meaningful than $\tau = 0$.
+
+**Source.** Keating & Shadwick, "A Universal Performance Measure," *Journal of
+Performance Measurement* 6(3), 2002.
 
 ---
 
@@ -391,16 +506,16 @@ Performance Measurement* 6(3), 2002.
 
 ### `value_at_risk(returns, *, confidence=0.95, method="historical")`
 
-The smallest loss `L` (positive number) such that
-`P(loss ≤ L) ≥ confidence`.
+**Definition.** The smallest positive loss $L$ such that
+$\mathbb{P}(\text{loss} \le L) \ge c$ at confidence $c \in (0,1)$.
 
-- **Historical**: `−Q_{1−c}(r)` — the negative of the empirical
-  `(1 − confidence)` quantile, with linear interpolation.
-- **Parametric** (Gaussian): `−(μ + Φ⁻¹(1 − c) · σ)` using the sample mean and
-  `ddof=1` sample std.
+**Formula.** Let $\alpha = 1 - c$.
 
-**Source.** Jorion, *Value at Risk: The New Benchmark for Managing Financial
-Risk*, 3rd ed. (McGraw-Hill, 2007).
+- *Historical*: $\;\text{VaR}_c = -\hat Q_\alpha(r)$, where $\hat Q_\alpha$ is
+  the empirical $\alpha$-quantile with linear interpolation.
+- *Parametric* (Gaussian):
+  $\;\text{VaR}_c = -\bigl(\hat\mu + \Phi^{-1}(\alpha)\,\hat\sigma\bigr)$, with
+  sample mean $\hat\mu$ and `ddof=1` sample std $\hat\sigma$.
 
 **Assumptions.**
 
@@ -408,30 +523,40 @@ Risk*, 3rd ed. (McGraw-Hill, 2007).
   cutoff.
 - *Parametric*: returns are Normally distributed — systematically
   underestimates losses for fat-tailed distributions.
-- Not coherent (fails sub-additivity in general) — see Artzner et al.,
-  "Coherent Measures of Risk," *Mathematical Finance* 9(3), 1999.
+- VaR is **not coherent** (fails sub-additivity in general).
+
+**Source.** Jorion, *Value at Risk: The New Benchmark for Managing Financial
+Risk*, 3rd ed. (McGraw-Hill, 2007); Artzner, Delbaen, Eber & Heath, "Coherent
+Measures of Risk," *Mathematical Finance* 9(3), 1999.
 
 ---
 
 ### `conditional_value_at_risk(returns, *, confidence=0.95, method="historical")`
 
-(Aliased as `expected_shortfall`.) Expected loss conditional on being in the
-`(1 − c)` left tail.
+(Aliased as `expected_shortfall`.)
 
-- **Historical**: mean of returns `≤ Q_{1−c}(r)` (returned with sign flipped).
-  If no observations meet that condition the function returns `−Q_{1−c}(r)`.
-- **Parametric** (Gaussian): `−(μ − σ · φ(z) / α)` with `z = Φ⁻¹(α)`,
-  `α = 1 − c`, where `φ` is the standard-Normal PDF.
+**Definition.** Expected loss conditional on being in the $\alpha = 1 - c$
+left tail.
+
+**Formula.** Let $z = \Phi^{-1}(\alpha)$.
+
+- *Historical*:
+  $\;\text{CVaR}_c = -\,\mathbb{E}\!\left[\,r \mid r \le \hat Q_\alpha(r)\right]$.
+  If no observation is at or below $\hat Q_\alpha$, the implementation falls
+  back to $-\hat Q_\alpha$.
+- *Parametric* (Gaussian):
+  $\;\text{CVaR}_c = -\!\left(\hat\mu - \hat\sigma \cdot \dfrac{\varphi(z)}{\alpha}\right)$.
+
+**Assumptions.**
+
+- CVaR is **coherent** (sub-additive) — preferred over VaR for portfolio
+  aggregation.
+- *Parametric* version inherits Normality.
+- Sample-size sensitive; consider bootstrapping with `bootstrap_metric`.
 
 **Source.** Rockafellar & Uryasev, "Optimization of Conditional Value-at-Risk,"
 *Journal of Risk* 2(3), 2000; Acerbi & Tasche, "On the Coherence of Expected
 Shortfall," *Journal of Banking & Finance* 26(7), 2002.
-
-**Assumptions.**
-
-- Coherent (sub-additive) — preferred over VaR for portfolio aggregation.
-- *Parametric* version inherits the Normality assumption.
-- Sample-size sensitive; consider bootstrapping with `bootstrap_metric`.
 
 ---
 
@@ -439,204 +564,339 @@ Shortfall," *Journal of Banking & Finance* 26(7), 2002.
 
 ### `beta(returns, benchmark)`
 
-OLS slope of `r_t` on `b_t`:
+**Definition.** OLS slope of strategy returns regressed on benchmark returns.
+
+**Formula.**
 
 $$
-\beta = \frac{\text{cov}(r, b)}{\text{var}(b)}
+\beta = \frac{\widehat{\text{Cov}}(r, b)}{\widehat{\text{Var}}(b)}
 $$
 
-with `ddof=1` throughout. Returns `NaN` when `var(b) = 0`.
-
-**Source.** Sharpe, "Capital Asset Prices," *Journal of Finance* 19(3), 1964.
+with `ddof=1` everywhere; `NaN` when $\widehat{\text{Var}}(b) = 0$.
 
 **Assumptions.**
 
 - Linear relationship between strategy and benchmark.
-- Stationarity — rolling beta is more informative than full-sample for live
-  monitoring.
+- Stationarity — rolling beta is more informative than full-sample beta for
+  live monitoring.
+
+**Source.** Sharpe, "Capital Asset Prices: A Theory of Market Equilibrium
+Under Conditions of Risk," *Journal of Finance* 19(3), 1964.
+
+---
 
 ### `downside_beta(returns, benchmark)` / `upside_beta(returns, benchmark)`
 
-Same definition as `beta` but conditioned on `b_t < 0` and `b_t > 0`
-respectively. Both return `NaN` when fewer than 2 conditioning observations or
-zero conditional variance.
+**Definition.** Beta computed only on periods where the benchmark is negative
+(downside) or positive (upside). Both return `NaN` when fewer than 2
+conditioning observations or zero conditional variance.
+
+**Formula.** Let $\mathcal{T}_- = \{t : b_t < 0\}$ and
+$\mathcal{T}_+ = \{t : b_t > 0\}$. Then
+
+$$
+\beta^{-} = \frac{\widehat{\text{Cov}}_{\mathcal{T}_-}(r, b)}{\widehat{\text{Var}}_{\mathcal{T}_-}(b)}, \qquad
+\beta^{+} = \frac{\widehat{\text{Cov}}_{\mathcal{T}_+}(r, b)}{\widehat{\text{Var}}_{\mathcal{T}_+}(b)}.
+$$
+
+**Assumptions.** Conditional samples are large enough for stable second
+moments; otherwise the metric is dominated by a few observations.
 
 **Source.** Bawa & Lindenberg, "Capital Market Equilibrium in a Mean-Lower
 Partial Moment Framework," *Journal of Financial Economics* 5(2), 1977; Ang,
 Chen & Xing, "Downside Risk," *Review of Financial Studies* 19(4), 2006.
 
+---
+
 ### `alpha(returns, benchmark, *, risk_free=0.0, periods_per_year)`
 
-Annualized Jensen's alpha:
+**Definition.** Annualized Jensen's alpha — the CAPM intercept on excess
+returns.
+
+**Formula.**
 
 $$
-\alpha = q \cdot \overline{(r_t - r_f)} - \beta \cdot q \cdot \overline{(b_t - r_f)}
+\alpha = q \cdot \overline{(r - r_f)} - \beta \cdot q \cdot \overline{(b - r_f)}
 $$
-
-**Source.** Jensen, "The Performance of Mutual Funds in the Period 1945–1964,"
-*Journal of Finance* 23(2), 1968.
 
 **Assumptions.**
 
 - CAPM holds (a strong empirical assumption).
 - Treat as a performance decomposition rather than a causal attribution.
 
+**Source.** Jensen, "The Performance of Mutual Funds in the Period 1945–1964,"
+*Journal of Finance* 23(2), 1968.
+
+---
+
 ### `tracking_error(returns, benchmark, *, periods_per_year, ddof=1)`
 
-Annualized standard deviation of active returns:
-$\sigma_{r-b} \cdot \sqrt{q}$.
+**Definition.** Annualized standard deviation of active returns.
+
+**Formula.** With $a_t = r_t - b_t$,
+
+$$
+\text{TE} = \sqrt{q} \cdot \sigma_a.
+$$
+
+**Assumptions.** Active returns are i.i.d.
 
 **Source.** Roll, "A Mean/Variance Analysis of Tracking Error," *Journal of
 Portfolio Management* 18(4), 1992.
 
-**Assumptions.** Active returns are i.i.d.
+---
 
 ### `correlation(returns, benchmark)`
 
-Pearson correlation $\rho \in [-1, 1]$.
+**Definition.** Pearson product-moment correlation, $\rho \in [-1, 1]$.
+
+**Formula.**
+
+$$
+\rho = \frac{\widehat{\text{Cov}}(r, b)}{\sigma_r \, \sigma_b}
+$$
+
+**Assumptions.** Joint distribution is well-approximated by a bivariate
+distribution with finite second moments; nonlinear dependence is missed.
 
 **Source.** Pearson, "Notes on the History of Correlation," *Biometrika* 13,
-1920 (historical reference).
+1920 (historical).
+
+---
 
 ### `up_capture(returns, benchmark)` / `down_capture(returns, benchmark)`
 
-Geometric capture ratios over benchmark up/down periods:
+**Definition.** Geometric capture ratios over benchmark-up / benchmark-down
+periods.
+
+**Formula.** With $\mathcal{T}_+ = \{t : b_t > 0\}$ and
+$\mathcal{T}_- = \{t : b_t < 0\}$,
 
 $$
-\text{Up} = \frac{\prod_{t : b_t > 0}(1 + r_t) - 1}{\prod_{t : b_t > 0}(1 + b_t) - 1}
+\text{Up} = \frac{\prod_{t \in \mathcal{T}_+}(1 + r_t) - 1}{\prod_{t \in \mathcal{T}_+}(1 + b_t) - 1}, \qquad
+\text{Down} = \frac{\prod_{t \in \mathcal{T}_-}(1 + r_t) - 1}{\prod_{t \in \mathcal{T}_-}(1 + b_t) - 1}.
 $$
 
-(analogous formula for down-capture over `b_t < 0`).
-
-**Source.** Morningstar, *Morningstar Methodology Paper: Upside/Downside
-Capture Ratio*, 2011.
+Returns `NaN` when there are no qualifying periods or the benchmark
+compounded return is exactly zero.
 
 **Assumptions.**
 
-- "Up market" = single-period benchmark > 0; alternative methodologies use
-  monthly or quarterly aggregation.
-- Returns `NaN` when there are no qualifying periods or the benchmark
-  compounded return is exactly zero.
+- "Up market" is defined as a single-period benchmark $> 0$; alternative
+  methodologies use monthly or quarterly aggregation.
+- Short series are unreliable.
+
+**Source.** Morningstar, *Morningstar Methodology Paper: Upside/Downside
+Capture Ratio*, 2011.
 
 ---
 
 ## 7. Distribution Shape (`ruin.distribution`)
 
 Standardized residuals: $z_t = (r_t - \bar r) / \sigma$, with $\sigma$ the
-sample std (`ddof=1`). All moment-based metrics return `NaN` when the input is
-constant (`σ = 0` or `n_unique ≤ 1`).
+sample std (`ddof=1`). All moment-based metrics return `NaN` when the input
+is constant.
 
 ### `skewness(returns, *, bias=False)`
 
-- **Unbiased** (default, SAS / SPSS / Excel SKEW):
-  $\,\hat{S} = \frac{n^2}{(n-1)(n-2)} \cdot \tfrac{1}{n} \sum_t z_t^3$.
-- **Biased** (population): $\,\tfrac{1}{n} \sum_t z_t^3$.
+**Definition.** Third standardized moment; negative = left-skewed, zero =
+symmetric.
+
+**Formula.**
+
+$$
+\hat S_{\text{biased}} = \frac{1}{n} \sum_{t=1}^{n} z_t^3, \qquad
+\hat S_{\text{unbiased}} = \frac{n^2}{(n-1)(n-2)} \cdot \hat S_{\text{biased}}.
+$$
+
+**Assumptions.** Reliable only with reasonable sample sizes; bias correction
+assumes independent observations.
 
 **Source.** Joanes & Gill, "Comparing Measures of Sample Skewness and
-Kurtosis," *Journal of the Royal Statistical Society Series D* 47(1), 1998.
+Kurtosis," *Journal of the Royal Statistical Society Series D* 47(1), 1998
+(SAS / SPSS / Excel SKEW conventions).
+
+---
 
 ### `excess_kurtosis(returns, *, bias=False)`
 
-- **Unbiased** (default, Excel KURT):
-  $\hat K = \frac{n(n+1)}{(n-1)(n-2)(n-3)} \sum_t z_t^4 - \frac{3(n-1)^2}{(n-2)(n-3)}$
-- **Biased**: $\,\tfrac{1}{n}\sum_t z_t^4 - 3$.
+**Definition.** Fisher excess kurtosis; Normal $= 0$, positive $=$ fatter
+tails.
 
-**Source.** Joanes & Gill (1998).
+**Formula.**
 
-**Assumptions for skewness / kurtosis.** Reliable only with reasonable sample
-sizes (n > 100 for kurtosis is a useful rule of thumb); independence of
-observations is assumed for the bias correction.
+$$
+\hat K_{\text{biased}} = \frac{1}{n} \sum_{t=1}^{n} z_t^4 - 3,
+$$
+
+$$
+\hat K_{\text{unbiased}} = \frac{n(n+1)}{(n-1)(n-2)(n-3)} \sum_{t=1}^{n} z_t^4 \;-\; \frac{3(n-1)^2}{(n-2)(n-3)}.
+$$
+
+**Assumptions.** Large samples (n > 100 is a useful rule of thumb);
+independence for the bias correction.
+
+**Source.** Joanes & Gill (1998) (Excel KURT convention).
+
+---
 
 ### `jarque_bera(returns)`
 
-Returns a frozen `JarqueBeraResult(statistic, p_value)`:
+**Definition.** Jarque–Bera asymptotic test of Normality. Returns a frozen
+`JarqueBeraResult(statistic, p_value)`.
+
+**Formula.** Using **biased** $\hat S$ and $\hat K$,
 
 $$
-\text{JB} = \frac{n}{6}\left(S^2 + \frac{K^2}{4}\right)
+\text{JB} = \frac{n}{6}\left(\hat S^2 + \frac{\hat K^2}{4}\right) \;\stackrel{H_0}{\sim}\; \chi^2_2,
 $$
 
-where `S` and `K` are the **biased** skewness and excess kurtosis. `p_value`
-uses the exact χ²(2) survival function `exp(−JB / 2)` — no SciPy dependency.
+$$
+p = \exp\!\left(-\,\text{JB} / 2\right) \quad \text{(exact $\chi^2_2$ survival).}
+$$
 
-**Source.** Jarque & Bera, "Efficient Tests for Normality, Homoscedasticity and
-Serial Independence of Regression Residuals," *Economics Letters* 6(3), 1980.
+**Assumptions.** Asymptotic — unreliable for $n \lesssim 100$. Failing to
+reject does not prove Normality.
 
-**Assumptions.** Asymptotic — unreliable for n ≲ 100. Failing to reject does
-not prove normality.
+**Source.** Jarque & Bera, "Efficient Tests for Normality, Homoscedasticity
+and Serial Independence of Regression Residuals," *Economics Letters* 6(3),
+1980.
+
+---
 
 ### `autocorrelation(returns, *, lag=1)`
 
+**Definition.** Lag-$k$ serial autocorrelation.
+
+**Formula.**
+
 $$
-\rho_k = \frac{\text{cov}(r_t, r_{t-k})}{\sigma(r_t) \cdot \sigma(r_{t-k})}
+\rho_k = \frac{\widehat{\text{Cov}}(r_t,\, r_{t-k})}{\sigma(r_t)\,\sigma(r_{t-k})}
 $$
 
-Implemented as the Pearson correlation between `r[lag:]` and `r[:n-lag]`.
-
-**Source.** Box, Jenkins, Reinsel & Ljung, *Time Series Analysis: Forecasting
-and Control*, 5th ed. (Wiley, 2015), ch. 2.
+implemented as the Pearson correlation between $r_{[k+1:\,n]}$ and
+$r_{[1:\,n-k]}$.
 
 **Assumptions.** Stationarity. Positive lag-1 autocorrelation is a key
 diagnostic for smoothed / illiquid pricing and invalidates the
-square-root-of-time rule (see `annualize_volatility`).
+square-root-of-time rule.
+
+**Source.** Box, Jenkins, Reinsel & Ljung, *Time Series Analysis: Forecasting
+and Control*, 5th ed. (Wiley, 2015), ch. 2.
 
 ---
 
 ## 8. Activity (`ruin.activity`)
 
-All thresholds default to 0; pass the per-period `risk_free` for an
+All thresholds default to $\tau = 0$; pass the per-period `risk_free` for an
 economically grounded reference.
 
 ### `hit_rate(returns, *, threshold=0.0)`
 
-$\,\tfrac{1}{n} \sum_t 1\{r_t > \tau\}$, in `[0, 1]`.
+**Definition.** Fraction of periods that beat the threshold; $\in [0, 1]$.
 
-### `average_win(returns, *, threshold=0.0)`
+**Formula.**
 
-Mean of returns strictly above `τ`; `NaN` if there are none.
+$$
+\text{HR}(\tau) = \frac{1}{n} \sum_{t=1}^{n} \mathbf{1}\{r_t > \tau\}
+$$
 
-### `average_loss(returns, *, threshold=0.0)`
+---
 
-Mean of returns strictly below `τ` (typically non-positive); `NaN` if there are
-none.
+### `average_win(returns, *, threshold=0.0)` / `average_loss(returns, *, threshold=0.0)`
+
+**Definition.** Mean of returns strictly above (resp. below) $\tau$. `NaN` if
+no observation meets the criterion.
+
+**Formula.** Let $\mathcal{W} = \{t : r_t > \tau\}$ and
+$\mathcal{L} = \{t : r_t < \tau\}$. Then
+
+$$
+\overline{W}(\tau) = \frac{1}{|\mathcal{W}|} \sum_{t \in \mathcal{W}} r_t, \qquad
+\overline{L}(\tau) = \frac{1}{|\mathcal{L}|} \sum_{t \in \mathcal{L}} r_t.
+$$
+
+---
 
 ### `win_loss_ratio(returns, *, threshold=0.0)`
 
-`average_win / |average_loss|`. `NaN` if either side is `NaN` or the
-denominator is zero.
+**Definition.** Average win over absolute average loss. `NaN` if either side
+is `NaN` or the denominator is zero.
+
+**Formula.**
+
+$$
+\text{WLR}(\tau) = \frac{\overline{W}(\tau)}{|\overline{L}(\tau)|}
+$$
+
+---
 
 ### `profit_factor(returns, *, threshold=0.0)`
 
+**Definition.** Gross gains over gross losses around $\tau$. `NaN` when the
+denominator is zero.
+
+**Formula.**
+
 $$
-\text{PF} = \frac{\sum_{t : r_t > \tau} r_t}{\left|\sum_{t : r_t < \tau} r_t\right|}
+\text{PF}(\tau) = \frac{\sum_{t : r_t > \tau} r_t}{\left|\sum_{t : r_t < \tau} r_t\right|}
 $$
 
-`NaN` when the denominator is zero.
+**Source.** Pardo, *The Evaluation and Optimization of Trading Strategies*,
+2nd ed. (Wiley, 2008), ch. 12.
 
-**Source.** Pardo, *The Evaluation and Optimization of Trading Strategies*, 2nd
-ed. (Wiley, 2008), ch. 12.
+---
 
 ### `best_period(returns)` / `worst_period(returns)`
 
-`max(r)` and `min(r)` respectively.
+**Definition.** Maximum / minimum single-period return.
+
+**Formula.**
+
+$$
+r_{\max} = \max_t r_t, \qquad r_{\min} = \min_t r_t.
+$$
+
+---
 
 ### `longest_winning_streak(returns, *, threshold=0.0)` / `longest_losing_streak(returns, *, threshold=0.0)`
 
-Longest consecutive run with `r_t > τ` (`r_t < τ` for losing). Periods exactly
-equal to `τ` break the streak.
+**Definition.** Longest run of consecutive periods strictly above (winning) or
+strictly below (losing) $\tau$. Periods exactly equal to $\tau$ break the
+streak.
 
-**Assumptions for the activity module.**
+**Formula.**
 
-- Strict inequality breaks streaks at `τ` — a deliberate convention; an
-  observation precisely at the threshold is neither a win nor a loss.
-- Statistics are sample-frequency-dependent (daily streaks ≠ monthly streaks).
+$$
+S_{\text{win}}(\tau) = \max_{(a,b)} \{\, b - a + 1 \;:\; r_t > \tau \;\forall\, t \in [a, b]\,\},
+$$
+
+$$
+S_{\text{lose}}(\tau) = \max_{(a,b)} \{\, b - a + 1 \;:\; r_t < \tau \;\forall\, t \in [a, b]\,\}.
+$$
+
+**Assumptions.**
+
+- Strict inequality breaks streaks at $\tau$ — a deliberate convention.
+- Sample-frequency-dependent (daily streaks ≠ monthly streaks).
 
 ---
 
 ## 9. Rolling Variants (`ruin.rolling`)
 
-Every `rolling_*` function returns a Polars Series cast to **Float32**,
-length-aligned to the input, with the leading `window − 1` values null.
-Internally everything runs in Float64.
+Every `rolling_*` function returns a Polars `Series` cast to **Float32**,
+length-aligned to the input, with the leading $w - 1$ values null. Internally
+all accumulation runs in Float64.
+
+For a window of size $w$ and a scalar metric $f$ defined on a window's
+returns, the rolling metric at time $t$ is
+
+$$
+f^{\text{roll}}_t = f\!\left(r_{t - w + 1},\, r_{t - w + 2},\, \dots,\, r_t\right) \quad \text{for } t \ge w,
+$$
+
+with `null` emitted whenever the valid (NaN-dropped) sample within the window
+is below `min_periods`.
 
 | Function | Underlying scalar metric | Window type |
 |---|---|---|
@@ -657,55 +917,83 @@ Internally everything runs in Float64.
 
 **Conventions.** `min_periods` defaults to `window` for integer windows. NaNs
 inside a window are *not* dropped for the simple Polars-native rolls
-(`rolling_volatility`, etc.); for path-dependent metrics implemented through
-`_window_apply` (skew, kurtosis, max drawdown, profit factor,
-autocorrelation), each window's NaN/null entries are dropped before the metric
-runs and a window with fewer than `min_periods` valid observations emits
-`null`.
+(`rolling_volatility`, etc.); for path-dependent metrics implemented via
+`_window_apply` (skew, kurtosis, max-drawdown, profit factor,
+autocorrelation), each window's NaN/null entries are dropped before the
+metric runs.
+
+**Assumptions.** Within-window stationarity. Each window is a plug-in
+estimator of the underlying metric — small windows produce noisy estimates of
+higher moments.
 
 **Source.** Standard rolling-window construction; see Tsay (2010) §2.7.
-
-**Assumptions.** Within-window stationarity. Each window is a plug-in estimator
-of the underlying metric — small windows produce noisy estimates of higher
-moments.
 
 ---
 
 ## 10. Period Slicing & Rate Conversion (`ruin.periods`)
 
-These are not statistical metrics, but they are the supported plumbing for
-metric pipelines.
+These are deterministic plumbing for metric pipelines, not statistical
+metrics, but they appear in formulas above.
 
 ### `mtd / qtd / ytd(returns, *, date_col, as_of=None)`
 
-Filter a DataFrame (or a date Series) to month-to-date, quarter-to-date, or
-year-to-date relative to `as_of` (defaults to `datetime.date.today()`).
+**Definition.** Filter rows whose date lies in the current month / quarter /
+year up to `as_of` (defaults to `datetime.date.today()`).
+
+**Formula.** With $d_t$ the date of row $t$ and reference date $d^{\star}$,
+
+$$
+\{t \;:\; d_{\text{period\_start}}(d^{\star}) \le d_t \le d^{\star}\}.
+$$
+
+---
 
 ### `trailing(returns, *, n, date_col=None)`
 
-Last `n` rows. Pass a sorted DataFrame; `date_col` is accepted for API
-symmetry but unused. Raises if `n ≤ 0`.
+**Definition.** Last $n$ rows. Pass a sorted DataFrame; `date_col` is accepted
+for API symmetry but unused. Raises if $n \le 0$.
+
+**Formula.** Index slice $[N - n, N)$ where $N$ is the total row count.
+
+---
 
 ### `since_inception(returns)`
 
-Identity — provided for API symmetry.
+**Definition / Formula.** Identity — returns the input unchanged. Provided
+for API symmetry.
+
+---
 
 ### `periods_per_year_for(frequency)`
 
-Conventional periods/year mapping: `D=252, W=52, M=12, Q=4, A=1, Y=1`. Raises
-on unknown frequency.
+**Definition.** Conventional periods/year mapping for common frequencies.
+Raises on unknown input.
 
-**Source.** CFA Institute *Quantitative Investment Analysis* §2.
+| Frequency | $q$ |
+|---|---|
+| D (daily) | 252 |
+| W (weekly) | 52 |
+| M (monthly) | 12 |
+| Q (quarterly) | 4 |
+| A / Y (annual) | 1 |
 
-### `annual_to_periodic(rate, *, periods_per_year)`
+**Source.** CFA Institute, *Quantitative Investment Analysis* §2.
 
-$\,(1 + \text{rate})^{1/q} - 1$.
+---
 
-### `periodic_to_annual(rate, *, periods_per_year)`
+### `annual_to_periodic(rate, *, periods_per_year)` / `periodic_to_annual(rate, *, periods_per_year)`
 
-$\,(1 + \text{rate})^{q} - 1$.
+**Definition.** Geometric conversion between annualized and per-period rates.
 
-**Assumptions.** Geometric compounding; constant rate across all periods.
+**Formula.**
+
+$$
+r_{\text{periodic}} = (1 + r_{\text{annual}})^{1/q} - 1, \qquad
+r_{\text{annual}} = (1 + r_{\text{periodic}})^{q} - 1.
+$$
+
+**Assumptions.** Geometric compounding with a constant rate across all
+periods. `periods_per_year > 0` is enforced.
 
 ---
 
@@ -713,19 +1001,20 @@ $\,(1 + \text{rate})^{q} - 1$.
 
 ### `sharpe_standard_error(returns, *, periods_per_year)`
 
-Lo (2002) autocorrelation-adjusted standard error of the **annualized** Sharpe
-ratio:
+**Definition.** Lo (2002) autocorrelation-adjusted standard error of the
+**annualized** Sharpe ratio.
+
+**Formula.** With per-period $\widehat{\text{SR}}_q = \bar r / \sigma$ and
+lag-1 autocorrelation $\hat\rho_1$,
 
 $$
-\text{SE}(\widehat{\text{SR}}_{\text{ann}}) \approx \sqrt{\frac{1 + 2 \rho_1 \cdot \widehat{\text{SR}}_q^2}{n}} \cdot \sqrt{q}
+\widehat{\text{SE}}\!\left(\widehat{\text{SR}}_{\text{ann}}\right)
+\;\approx\;
+\sqrt{\frac{1 + 2\,\hat\rho_1\,\widehat{\text{SR}}_q^{\,2}}{n}} \cdot \sqrt{q}.
 $$
 
-where $\widehat{\text{SR}}_q = \bar r / \sigma$ is the per-period Sharpe and
-$\rho_1$ is the lag-1 autocorrelation. Reduces to $\sqrt{q/n}$ under i.i.d.
-returns.
-
-**Source.** Lo, "The Statistics of Sharpe Ratios," *Financial Analysts Journal*
-58(4), 2002.
+Reduces to $\sqrt{q / n}$ under i.i.d. returns. Returns `NaN` when
+$\sigma = 0$; requires $n \ge 4$.
 
 **Assumptions.**
 
@@ -733,32 +1022,55 @@ returns.
 - Adjusts for first-order autocorrelation only — higher-order serial
   dependence still biases the estimator.
 
+**Source.** Lo, "The Statistics of Sharpe Ratios," *Financial Analysts
+Journal* 58(4), 2002 (eq. 12).
+
+---
+
 ### `sharpe_confidence_interval(returns, *, periods_per_year, confidence=0.95)`
 
-Asymptotic Wald interval $\widehat{\text{SR}} \pm z \cdot \text{SE}$ with
-$z = \Phi^{-1}\!\left(\tfrac{1+c}{2}\right)$.
+**Definition.** Asymptotic Wald confidence interval for the annualized Sharpe
+ratio.
+
+**Formula.** With $z_{c} = \Phi^{-1}\!\left(\tfrac{1 + c}{2}\right)$,
+
+$$
+\text{CI}_c \;=\; \left(\widehat{\text{SR}}_{\text{ann}} - z_c \cdot \widehat{\text{SE}},\ \widehat{\text{SR}}_{\text{ann}} + z_c \cdot \widehat{\text{SE}}\right).
+$$
+
+**Assumptions.** Asymptotic Normality of the Sharpe estimator (best with
+$n \ge \sim 60$).
 
 **Source.** Lo (2002).
 
-**Assumptions.** Asymptotic Normality of the Sharpe estimator — best with
-n ≥ ~60 observations.
+---
 
 ### `bootstrap_metric(fn, returns, *, n_samples=1000, confidence=0.95, seed=None)`
 
-Resampled-with-replacement bootstrap. Computes `fn(returns)` as the point
-estimate, then resamples `n_samples` times to build percentile-method
-confidence bounds.
+**Definition.** Percentile-method bootstrap CI for any scalar metric.
+Returns `(point, lower, upper)`. The point estimate is `fn(returns)` on the
+original sample.
 
-**Source.** Efron & Tibshirani, *An Introduction to the Bootstrap* (Chapman &
-Hall, 1993), ch. 13 (percentile method).
+**Formula.** Draw $B$ resamples $r^{(b)}_1, \dots, r^{(b)}_n$ i.i.d. with
+replacement from $\{r_t\}$. Compute $\hat\theta^{(b)} = f(r^{(b)})$. Sort to
+$\hat\theta^{(1)} \le \dots \le \hat\theta^{(B^{\star})}$ (using only $B^{\star}$
+non-failing resamples). With $\alpha = 1 - c$,
+
+$$
+\text{CI}_c \;=\; \left(\hat\theta^{(\lfloor (\alpha/2) \cdot B^{\star} \rfloor)},\ \hat\theta^{(\lceil (1 - \alpha/2) \cdot B^{\star} \rceil - 1)}\right).
+$$
+
+If every resample raises (`ValueError` or `ZeroDivisionError`), the bounds
+degenerate to `(NaN, NaN)`.
 
 **Assumptions.**
 
 - Observations are i.i.d. — i.i.d. resampling destroys serial dependence; for
   autocorrelated returns use a block bootstrap (not provided).
-- `fn` accepts a `pl.Series`.
-- Resamples that raise `ValueError` or `ZeroDivisionError` are silently
-  skipped; if all fail, the bounds are returned as `NaN`.
+- `fn` accepts a `pl.Series` and returns a `float`.
+
+**Source.** Efron & Tibshirani, *An Introduction to the Bootstrap* (Chapman &
+Hall, 1993), ch. 13 (percentile method).
 
 ---
 
@@ -766,52 +1078,60 @@ Hall, 1993), ch. 13 (percentile method).
 
 ### `summary(returns, benchmark=None, *, risk_free=0.0, periods_per_year, strict=False)`
 
-Computes every scalar metric above for one return stream (or one row per
-column when given a DataFrame). Benchmark-relative columns are `null` when no
-benchmark is supplied. `strict=True` raises on NaN/null input instead of
-dropping. Float64 output columns are downcast to Float32 for the public
-`pl.DataFrame` return type, in line with the dtype policy in `.claude/CLAUDE.md`.
+**Definition.** Computes every scalar metric above for one return stream — or
+one row per column when given a DataFrame. Benchmark-relative columns are
+`null` when no benchmark is supplied. `strict=True` raises on NaN/null input
+instead of dropping. Float64 output columns are downcast to Float32 for the
+public `pl.DataFrame` return type, in line with the dtype policy in
+`.claude/CLAUDE.md`.
 
-This is the **only** bundled function in `ruin` — everything else is a single
-metric in, single number out.
+**Formula.** For each column $c$ and metric function $f \in \mathcal{F}$,
+
+$$
+\text{summary}[c, f] \;=\; \begin{cases} f(r_c) & \text{if no exception,} \\ \text{NaN} & \text{if } f \text{ raises } (\texttt{ValueError},\ \texttt{ZeroDivisionError}). \end{cases}
+$$
+
+This is the **only** bundled function in `ruin` — every other public symbol
+is a single-metric building block.
+
+**Source.** Composition pattern internal to `ruin`; see `report.py`.
 
 ---
 
 ## Definition ↔ Implementation Audit
 
 The following table verifies that the formula stated above matches the actual
-behaviour in source. Each row records: where the formula lives in this doc,
-where the code lives, and any caveat that materially alters the textbook
-formula.
+behaviour in source. Each row records the source location and any caveat that
+materially alters the textbook formula.
 
 | Metric | Source location | Match? | Notes |
 |---|---|---|---|
 | `from_prices` | `returns.py:16` | ✅ | Drops the leading null produced by `shift(1)` and any NaN; raises if any price ≤ 0. |
 | `total_return` | `returns.py:26` | ✅ | Direct `(1 + r).product() − 1`. |
-| `annualize_return` (geo) | `returns.py:33` | ✅ + edge case | Returns `NaN` when `total_return ≤ −1`, avoiding fractional powers of negatives — documented behaviour. |
+| `annualize_return` (geo) | `returns.py:33` | ✅ + edge case | Returns `NaN` when total return ≤ −1, avoiding fractional powers of negatives. |
 | `annualize_return` (arith) | `returns.py:55` | ✅ | `mean(r) * q`. |
 | `cagr` | `returns.py:60` | ✅ | Pure alias. |
 | `volatility` | `volatility.py:8` | ✅ | `Series.std(ddof=ddof)`. |
-| `annualize_volatility` | `volatility.py:15` | ✅ | `volatility · √q`. Validates `q > 0`. |
-| `downside_deviation` | `volatility.py:27` | ✅ | All-periods denominator with `ddof=0`; matches Sortino convention. |
-| `semi_deviation` | `volatility.py:48` | ✅ | Std restricted to negative returns (both numerator and denominator); returns 0 when there are none, as documented. |
-| `drawdown_series` | `drawdown.py:15` | ✅ | Prepends initial wealth = 1 so first-period losses register as drawdowns. Documented in this doc + the source's docstring. |
+| `annualize_volatility` | `volatility.py:15` | ✅ | `volatility · √q`; validates `q > 0`. |
+| `downside_deviation` | `volatility.py:27` | ✅ | All-periods denominator with `ddof=0` — Sortino convention. |
+| `semi_deviation` | `volatility.py:48` | ✅ | Restricted to negative returns; returns 0 when there are none. |
+| `drawdown_series` | `drawdown.py:15` | ✅ | Prepends initial wealth = 1 so first-period losses register as drawdowns. |
 | `max_drawdown` | `drawdown.py:27` | ✅ | `min(drawdown_series)`. |
-| `average_drawdown` | `drawdown.py:33` | ✅ | Episode = contiguous underwater run, separated by `dd ≥ 0`; matches the doc. |
+| `average_drawdown` | `drawdown.py:33` | ✅ | Episode = contiguous underwater run, separated by `dd ≥ 0`. |
 | `max_drawdown_duration` | `drawdown.py:61` | ✅ | Longest count of consecutive `dd < 0` periods. |
-| `recovery_time` | `drawdown.py:76` | ✅ | First subsequent index with `dd ≥ 0` after the trough; `NaN` if unrecovered, `0.0` if no drawdown ever occurred. |
+| `recovery_time` | `drawdown.py:76` | ✅ | First subsequent index with `dd ≥ 0` after the trough; `NaN` if unrecovered, `0.0` if no drawdown. |
 | `time_underwater` | `drawdown.py:98` | ✅ | Count of `dd < 0` periods. |
-| `drawdown_start` | `drawdown.py:104` | ✅ | Walks back from trough to last `dd ≥ 0`. Returns `0` if no drawdown. |
+| `drawdown_start` | `drawdown.py:104` | ✅ | Walks back from trough to the last `dd ≥ 0`; `0` if no drawdown. |
 | `drawdown_end` | `drawdown.py:125` | ✅ | Index of the trough (first occurrence of `min`). |
 | `sharpe_ratio` | `ratios.py:17` | ✅ | Annualized; `NaN` when annualized vol = 0. |
-| `sortino_ratio` | `ratios.py:35` | ✅ | Uses `downside_deviation` with `ddof=0` and the all-periods denominator. Threshold defaults to `risk_free`. |
-| `calmar_ratio` | `ratios.py:57` | ✅ | `CAGR / |max_drawdown|`. The classical Calmar uses a 36-month window — this implementation uses the full sample (caveat noted above). |
+| `sortino_ratio` | `ratios.py:35` | ✅ | Uses `downside_deviation` (ddof=0, all-periods denominator); threshold defaults to `risk_free`. |
+| `calmar_ratio` | `ratios.py:57` | ✅ | `CAGR / |max_drawdown|`. Full-sample window (not 36-month). |
 | `information_ratio` | `ratios.py:68` | ✅ | Uses `align_benchmark`; annualized. |
-| `treynor_ratio` | `ratios.py:85` | ✅ | `NaN` when `β = 0`; uses `align_benchmark`. |
-| `omega_ratio` | `ratios.py:101` | ✅ | Sum-of-gains / sum-of-losses; `NaN` if no downside. |
+| `treynor_ratio` | `ratios.py:85` | ✅ | `NaN` when `β = 0`. |
+| `omega_ratio` | `ratios.py:101` | ✅ | Sum-of-gains over sum-of-losses; `NaN` if no downside. |
 | `value_at_risk` (hist) | `tail.py:9` | ✅ | `−Q_{1−c}` via `Series.quantile(..., interpolation="linear")`. |
 | `value_at_risk` (param) | `tail.py:28` | ✅ | `−(μ + Φ⁻¹(α)·σ)` with sample `ddof=1`. |
-| `conditional_value_at_risk` (hist) | `tail.py:53` | ✅ + edge case | Falls back to `−Q_{1−c}` if no observation lies at or below the quantile (documented above). |
+| `conditional_value_at_risk` (hist) | `tail.py:53` | ✅ + edge case | Falls back to `−Q_{1−c}` if no observation lies at or below the quantile. |
 | `conditional_value_at_risk` (param) | `tail.py:59` | ✅ | Closed-form Gaussian ES via local `norm_pdf` / `norm_ppf`. |
 | `beta` | `market.py:10` | ✅ | Manual `cov / var` with `ddof=1`. |
 | `downside_beta` | `market.py:30` | ✅ | Conditioned on `b < 0`; needs ≥ 2 observations. |
@@ -819,67 +1139,60 @@ formula.
 | `alpha` | `market.py:60` | ✅ | Annualized Jensen's alpha using `align_benchmark`. |
 | `tracking_error` | `market.py:77` | ✅ | Annualized std of active returns. |
 | `correlation` | `market.py:90` | ✅ | Polars `pl.corr` over the aligned pair. |
-| `up_capture` | `market.py:98` | ✅ | Geometric on `b > 0` periods; `NaN` on empty subset or zero benchmark. |
+| `up_capture` | `market.py:98` | ✅ | Geometric on `b > 0` periods. |
 | `down_capture` | `market.py:113` | ✅ | Symmetric to up-capture on `b < 0`. |
 | `skewness` | `distribution.py:29` | ✅ | Fisher-Pearson unbiased; biased option matches biased formula; `NaN` when constant. |
-| `excess_kurtosis` | `distribution.py:53` | ✅ | Excel-KURT formula in unbiased path; biased subtracts 3. |
-| `jarque_bera` | `distribution.py:78` | ✅ | Uses **biased** S and K (matches the original Jarque–Bera paper). χ²(2) p-value via `exp(−JB/2)`. Returns a frozen dataclass. |
-| `autocorrelation` | `distribution.py:97` | ✅ | Pearson on `r[lag:]` vs. `r[:n−lag]`. Validates `lag ≥ 1`. |
+| `excess_kurtosis` | `distribution.py:53` | ✅ | Excel KURT formula in unbiased path; biased subtracts 3. |
+| `jarque_bera` | `distribution.py:78` | ✅ | Uses **biased** S and K (matches the original paper). χ²(2) p-value via `exp(−JB/2)`. |
+| `autocorrelation` | `distribution.py:97` | ✅ | Pearson on `r[lag:]` vs. `r[:n−lag]`; validates `lag ≥ 1`. |
 | `hit_rate` | `activity.py:8` | ✅ | Strict inequality `r > τ`. |
 | `average_win` | `activity.py:15` | ✅ | `r > τ`; `NaN` if none. |
 | `average_loss` | `activity.py:24` | ✅ | `r < τ`; `NaN` if none. |
 | `win_loss_ratio` | `activity.py:33` | ✅ | `NaN` propagation handled. |
-| `profit_factor` | `activity.py:44` | ✅ | Ratio of gross gains to gross losses around `τ`; `NaN` on zero denominator. |
+| `profit_factor` | `activity.py:44` | ✅ | Ratio of gross gains to gross losses around `τ`. |
 | `best_period` / `worst_period` | `activity.py:55–66` | ✅ | `Series.max()` / `Series.min()`. |
-| `longest_winning_streak` / `losing_streak` | `activity.py:69–96` | ✅ | Strict comparison breaks streaks at `τ`, as documented. |
+| `longest_winning_streak` / `losing_streak` | `activity.py:69–96` | ✅ | Strict inequality; equality at `τ` breaks the streak. |
 | `rolling_*` (native) | `rolling.py:90–216` | ✅ | Use Polars `rolling_*`; min-samples defaults to `window` for int windows; output cast to Float32. |
-| `rolling_skewness / kurtosis / autocorr / max_drawdown / profit_factor` | `rolling.py:244–331` | ✅ | Use `_window_apply`, which drops within-window NaNs and emits null when valid count `< min_periods`. |
-| `rolling_alpha` | `rolling.py:219` | ✅ | Composed from rolling means + rolling beta; matches the scalar formula. |
+| `rolling_skewness / kurtosis / autocorr / max_drawdown / profit_factor` | `rolling.py:244–331` | ✅ | Use `_window_apply`; drop within-window NaNs; emit null when valid count `< min_periods`. |
+| `rolling_alpha` | `rolling.py:219` | ✅ | Composed from rolling means + rolling beta. |
 | `rolling_tracking_error` | `rolling.py:198` | ✅ | Annualized rolling std of active returns. |
-| `mtd / qtd / ytd` | `periods.py:10–56` | ✅ | Inclusive lower and upper bounds; `as_of` defaults to `date.today()`. |
+| `mtd / qtd / ytd` | `periods.py:10–56` | ✅ | Inclusive lower and upper bounds; `as_of` defaults to today. |
 | `trailing` | `periods.py:59` | ✅ | `Series.tail(n)`; raises if `n ≤ 0`. |
 | `since_inception` | `periods.py:71` | ✅ | Identity. |
 | `periods_per_year_for` | `periods.py:86` | ✅ | Mapping matches the convention table; raises on unknown frequency. |
 | `annual_to_periodic` / `periodic_to_annual` | `periods.py:96–107` | ✅ | Geometric, validates `q > 0`. |
-| `sharpe_standard_error` | `inference.py:17` | ✅ | Implements Lo (2002) eq (12); `NaN` when σ = 0; needs `n ≥ 4`. |
+| `sharpe_standard_error` | `inference.py:17` | ✅ | Lo (2002) eq (12); `NaN` when σ = 0; needs `n ≥ 4`. |
 | `sharpe_confidence_interval` | `inference.py:44` | ✅ | Wald CI using `Φ⁻¹((1+c)/2)`. |
-| `bootstrap_metric` | `inference.py:58` | ✅ | i.i.d. percentile bootstrap; silently skips resamples that raise `(ValueError, ZeroDivisionError)`; returns `(NaN, NaN)` bounds if all fail. |
-| `summary` | `report.py:51` | ✅ | Calls every scalar metric through `_safe`, which catches `(ValueError, ZeroDivisionError)` and converts to `NaN`. Float64 columns downcast to Float32 (dtype policy). |
+| `bootstrap_metric` | `inference.py:58` | ✅ | i.i.d. percentile bootstrap; silently skips resamples raising `(ValueError, ZeroDivisionError)`; `(NaN, NaN)` if all fail. |
+| `summary` | `report.py:51` | ✅ | Calls every scalar metric through `_safe`; Float64 columns downcast to Float32. |
 
 ### Observations from the audit
 
 1. **Every metric in this document is implemented exactly as stated**, modulo
-   four small but worth-flagging edge cases that all match documented
-   behaviour:
-   - `annualize_return` returns `NaN` on a wiped-out track record (`R_tot ≤ −1`)
-     instead of raising.
-   - `recovery_time` returns `NaN` on unrecovered series, `0.0` when no
+   four documented edge cases:
+   - `annualize_return` returns `NaN` on a wiped-out track record
+     ($R_{\text{tot}} \le -1$) instead of raising.
+   - `recovery_time` returns `NaN` on unrecovered series and $0$ when no
      drawdown ever occurred.
-   - Historical `conditional_value_at_risk` falls back to `−Q_{1−c}` when no
-     return is at or below the quantile (rare with linear interpolation, but
-     possible at extreme `confidence` on tiny samples).
-   - `bootstrap_metric` silently drops resamples that raise
-     `(ValueError, ZeroDivisionError)`; the point estimate is unaffected, but
-     the CI is computed on a (possibly smaller) usable subset and degenerates
-     to `(NaN, NaN)` if everything fails.
+   - Historical `conditional_value_at_risk` falls back to $-\hat Q_{1-c}$ when
+     no return is at or below the quantile.
+   - `bootstrap_metric` silently drops resamples raising
+     `(ValueError, ZeroDivisionError)` and returns `(NaN, NaN)` bounds if
+     everything fails.
 
 2. **Convention choices to keep in mind when comparing to other libraries.**
-   - `downside_deviation` uses `ddof=0` and the all-periods denominator
-     (Sortino convention). `pyfolio` and `empyrical` use the same; some
-     in-house implementations divide by the count of downside obs only —
-     that's `semi_deviation` here.
-   - `jarque_bera` uses **biased** skew/kurtosis to match the original Jarque
-     & Bera paper. SciPy's `jarque_bera` does the same, but a few tutorial
-     implementations plug in the unbiased moments.
+   - `downside_deviation` uses the Sortino all-periods denominator with
+     `ddof=0` (matches `pyfolio` / `empyrical`).
+   - `jarque_bera` uses **biased** skew / kurtosis to match the original
+     paper — same as `scipy.stats.jarque_bera`.
    - `skewness` / `excess_kurtosis` default to **unbiased** (SAS / SPSS /
-     Excel). Pass `bias=True` for the biased estimators consistent with
-     NumPy's `scipy.stats.skew(..., bias=True)`.
+     Excel). Pass `bias=True` for the population estimators.
    - `calmar_ratio` uses the full sample, not the canonical 36-month window.
-   - `sharpe_standard_error` is the Lo (2002) first-order correction only.
+   - `sharpe_standard_error` is Lo (2002)'s first-order correction only.
 
 3. **Dtype contract.** All public `pl.Series` / `pl.DataFrame` outputs are
    `Float32`; scalar Python returns remain `float` (Float64 semantics).
-   Internal accumulation runs in `Float64`. This matches the policy in
+   Internal accumulation runs in `Float64`. Matches the policy in
    `.claude/CLAUDE.md`.
 
 4. **No undocumented metric is exposed by the package.** The functions in

@@ -107,5 +107,7 @@ The following are **explicitly out of scope**. Do not open issues requesting the
 - Drawdowns are non-positive: `-0.23` means 23% drawdown.
 - VaR and CVaR are positive loss magnitudes (desk convention): `0.02` means "lose at most 2%."
 
-See [`docs/conventions.md`](docs/conventions.md) for full details.
-See [`docs/assumptions.md`](docs/assumptions.md) for when each metric can mislead you.
+See [`docs/conventions.md`](docs/conventions.md) for library-wide behaviour
+(sign conventions, NaN policy, input types, alignment).
+See [`docs/metrics.md`](docs/metrics.md) for per-metric definitions, formulas,
+assumptions, and citations.
