@@ -206,7 +206,7 @@ Downside Risk Framework," *Journal of Investing* 3(3), 1994.
 returns (numerator and denominator both restricted). Returns 0 when there are
 no negative returns.
 
-**Formula.** With $n_{-} = \#\{t : r_t < 0\}$ and
+**Formula.** With $n_{-} = |\{t : r_t < 0\}|$ and
 $\bar r_{-} = \frac{1}{n_{-}} \sum_{t : r_t < 0} r_t$,
 
 $$
@@ -940,10 +940,12 @@ metrics, but they appear in formulas above.
 **Definition.** Filter rows whose date lies in the current month / quarter /
 year up to `as_of` (defaults to `datetime.date.today()`).
 
-**Formula.** With $d_t$ the date of row $t$ and reference date $d^{\star}$,
+**Formula.** With $d_t$ the date of row $t$, reference date $d^{\star}$, and
+$d_{\text{start}}(d^{\star})$ the first day of the corresponding month /
+quarter / year,
 
 $$
-\{t \;:\; d_{\text{period\_start}}(d^{\star}) \le d_t \le d^{\star}\}.
+\{t \;:\; d_{\text{start}}(d^{\star}) \le d_t \le d^{\star}\}.
 $$
 
 ---
