@@ -47,7 +47,7 @@ extra:
       link: https://github.com/aexsalomao/ruin
       name: GitHub
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/ruin/
+      link: https://pypi.org/project/pyruin/
       name: PyPI
 
 copyright: Copyright &copy; 2026 Antônio Salomão

@@ -10,15 +10,17 @@ hide:
 
 **Polars-first risk metrics for quant hedge funds — returns in, numbers out.**
 
-[![PyPI](https://img.shields.io/pypi/v/ruin?color=red)](https://pypi.org/project/ruin/)
-[![Python](https://img.shields.io/pypi/pyversions/ruin)](https://pypi.org/project/ruin/)
+[![PyPI](https://img.shields.io/pypi/v/pyruin?color=red)](https://pypi.org/project/pyruin/)
+[![Python](https://img.shields.io/pypi/pyversions/pyruin)](https://pypi.org/project/pyruin/)
 [![License](https://img.shields.io/github/license/aexsalomao/ruin)](https://github.com/aexsalomao/ruin/blob/master/LICENSE)
 [![CI](https://github.com/aexsalomao/ruin/actions/workflows/ci.yml/badge.svg)](https://github.com/aexsalomao/ruin/actions/workflows/ci.yml)
 [![Docs](https://github.com/aexsalomao/ruin/actions/workflows/docs.yml/badge.svg)](https://aexsalomao.github.io/ruin/)
 
 ```bash
-pip install ruin
+pip install pyruin
 ```
+
+> Distributed on PyPI as **`pyruin`** (the name `ruin` was taken). Import name is unchanged: `import ruin`.
 
 </div>
 

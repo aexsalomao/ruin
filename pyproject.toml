@@ -1,5 +1,5 @@
 [project]
-name = "ruin"
+name = "pyruin"
 version = "0.1.0"
 description = "Polars-first risk metrics for quant hedge funds"
 readme = "README.md"
@@ -51,6 +51,11 @@ Changelog = "https://github.com/aexsalomao/ruin/blob/master/CHANGELOG.md"
 [build-system]
 requires = ["uv_build>=0.11.6,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+# Distributed on PyPI as `pyruin` (the name `ruin` was taken),
+# but the import name stays `ruin`.
+module-name = "ruin"
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config"

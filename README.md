@@ -5,10 +5,12 @@ A Polars-first risk metrics library for quant hedge funds.
 ## Installation
 
 ```bash
-pip install ruin
+pip install pyruin
 # or with optional SciPy extras (reserved for future use):
-pip install "ruin[stats]"
+pip install "pyruin[stats]"
 ```
+
+> Distributed on PyPI as **`pyruin`** (the name `ruin` was taken). The import name is unchanged: `import ruin`.
 
 ## Quickstart
 
