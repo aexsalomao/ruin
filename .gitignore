@@ -1,17 +1,21 @@
+# Python-generated files
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
 .Python
 *.egg-info/
 *.egg
-dist/
 build/
+dist/
 wheels/
 .eggs/
 pip-wheel-metadata/
+
+# Virtual environments
 .venv/
 venv/
+.env
+.env.*
 
 # Test / tool caches
 .pytest_cache/
@@ -28,9 +32,19 @@ htmlcov/
 *.cover
 coverage.xml
 
+# uv cache (lockfile uv.lock should be committed)
+.uv/
+
+# MkDocs local build output (deployed via GitHub Actions, not committed)
+site/
+
+# Claude local settings (personal preferences, not shared)
+CLAUDE.local.md
+
 # IDE / editor
 .vscode/
 .idea/
+*.iml
 *.swp
 
 # OS
