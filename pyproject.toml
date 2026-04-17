@@ -17,12 +17,12 @@ dependencies = [
 [project.optional-dependencies]
 stats = ["scipy>=1.9"]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-benchmark>=4.0",
-    "hypothesis>=6.0",
-    "mypy>=1.0",
-    "ruff>=0.1",
+    "pytest>=7.0,<9.0",
+    "pytest-cov>=4.0,<7.0",
+    "pytest-benchmark>=4.0,<6.0",
+    "hypothesis>=6.0,<7.0",
+    "mypy>=1.11,<2.0",
+    "ruff>=0.6,<1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -45,7 +45,7 @@ warn_return_any = false
 # etc.) are typed as broad unions (int | float | Decimal | date | ...). Passing them
 # to float(...) is safe at runtime but noisy at type-check time.
 disable_error_code = ["arg-type"]
-packages = ["ruin"]
+files = ["src", "tests"]
 mypy_path = "src"
 
 [tool.pytest.ini_options]

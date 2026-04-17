@@ -4,14 +4,35 @@ __pycache__/
 *.pyd
 .Python
 *.egg-info/
+*.egg
 dist/
 build/
+wheels/
 .eggs/
+pip-wheel-metadata/
 .venv/
 venv/
+
+# Test / tool caches
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.tox/
+.benchmarks/
+.hypothesis/
+
+# Coverage
 htmlcov/
 .coverage
+.coverage.*
 *.cover
+coverage.xml
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

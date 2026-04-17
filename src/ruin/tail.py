@@ -23,7 +23,7 @@ def value_at_risk(
     require_minimum_length(r, 1, "value_at_risk")
 
     if method == "historical":
-        q = float(r.quantile(1.0 - confidence, interpolation="linear"))  # type: ignore[call-arg]
+        q = float(r.quantile(1.0 - confidence, interpolation="linear"))
         return -q
     elif method == "parametric":
         mu = float(r.mean())
