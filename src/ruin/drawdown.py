@@ -27,39 +27,35 @@ def drawdown_series(returns: ReturnInput) -> pl.Series:
 def max_drawdown(returns: ReturnInput) -> float:
     """Maximum drawdown (non-positive fraction, e.g. -0.23 = 23%)."""
     dd = drawdown_series(returns)
-    return float(dd.min())  # type: ignore[arg-type]
+    return float(dd.min())
 
 
 def average_drawdown(returns: ReturnInput) -> float:
     """Mean trough magnitude across distinct drawdown episodes. New episode at each new HWM."""
     dd = drawdown_series(returns)
-    if len(dd) == 0:
-        return 0.0
-
-    # Identify episode troughs: dd goes from 0 -> negative -> recovers to 0
-    # We scan for contiguous underwater segments and collect their minimum
-    episodes: list[float] = []
-    current_min = 0.0
-    in_drawdown = False
-
-    for v in dd.to_list():
-        if v < 0.0:
-            in_drawdown = True
-            if v < current_min:
-                current_min = v
-        else:
-            if in_drawdown:
-                episodes.append(current_min)
-                current_min = 0.0
-                in_drawdown = False
-
-    # Last episode may still be open
-    if in_drawdown:
-        episodes.append(current_min)
-
+    episodes = _episode_troughs(dd.to_list())
     if not episodes:
         return 0.0
     return sum(episodes) / len(episodes)
+
+
+def _episode_troughs(dd_values: list[float]) -> list[float]:
+    """Minimum of each contiguous underwater segment; segments are separated by dd >= 0."""
+    episodes: list[float] = []
+    current_min = 0.0
+    in_drawdown = False
+    for v in dd_values:
+        if v < 0.0:
+            in_drawdown = True
+            current_min = min(current_min, v)
+            continue
+        if in_drawdown:
+            episodes.append(current_min)
+            current_min = 0.0
+            in_drawdown = False
+    if in_drawdown:
+        episodes.append(current_min)
+    return episodes
 
 
 def max_drawdown_duration(returns: ReturnInput) -> int:

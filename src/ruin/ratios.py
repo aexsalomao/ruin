@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
+from ruin._internal.validate import (
+    ReturnInput,
+    align_benchmark,
+    require_minimum_length,
+    to_series,
+)
 from ruin.drawdown import max_drawdown
+from ruin.market import beta as _compute_beta
 from ruin.returns import annualize_return
 from ruin.volatility import downside_deviation
 
@@ -20,7 +26,7 @@ def sharpe_ratio(
     require_minimum_length(r, ddof + 1, "sharpe_ratio")
     excess = r - risk_free
     ann_excess = float(excess.mean()) * periods_per_year  # type: ignore[operator]
-    ann_vol = float(excess.std(ddof=ddof)) * (periods_per_year**0.5)  # type: ignore[arg-type]
+    ann_vol = float(excess.std(ddof=ddof)) * (periods_per_year**0.5)
     if ann_vol == 0.0:
         return float("nan")
     return ann_excess / ann_vol
@@ -67,12 +73,10 @@ def information_ratio(
     ddof: int = 1,
 ) -> float:
     """Annualized IR: `ann_active_return / ann_tracking_error`."""
-    from ruin._internal.validate import align_benchmark
-
     r, b = align_benchmark(returns, benchmark)
     active = r - b
     ann_active = float(active.mean()) * periods_per_year  # type: ignore[operator]
-    ann_te = float(active.std(ddof=ddof)) * (periods_per_year**0.5)  # type: ignore[arg-type]
+    ann_te = float(active.std(ddof=ddof)) * (periods_per_year**0.5)
     if ann_te == 0.0:
         return float("nan")
     return ann_active / ann_te
@@ -86,12 +90,9 @@ def treynor_ratio(
     periods_per_year: float,
 ) -> float:
     """Annualized Treynor: `ann_excess_return / beta`."""
-    from ruin._internal.validate import align_benchmark
-    from ruin.market import beta as compute_beta
-
     r, b = align_benchmark(returns, benchmark)
     ann_excess = float((r - risk_free).mean()) * periods_per_year  # type: ignore[operator]
-    beta_val = compute_beta(r, b)
+    beta_val = _compute_beta(r, b)
     if beta_val == 0.0:
         return float("nan")
     return ann_excess / beta_val

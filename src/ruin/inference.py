@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import math
 from collections.abc import Callable
 
@@ -12,6 +11,7 @@ import polars as pl
 from ruin._internal.normal import norm_ppf
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 from ruin.distribution import autocorrelation
+from ruin.ratios import sharpe_ratio
 
 
 def sharpe_standard_error(
@@ -28,8 +28,8 @@ def sharpe_standard_error(
     r = to_series(returns)
     require_minimum_length(r, 4, "sharpe_standard_error")
     n = len(r)
-    mu = float(r.mean())  # type: ignore[arg-type]
-    sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
+    mu = float(r.mean())
+    sigma = float(r.std(ddof=1))
     if sigma == 0.0:
         return float("nan")
     sr_q = mu / sigma  # per-period Sharpe
@@ -48,8 +48,6 @@ def sharpe_confidence_interval(
     confidence: float = 0.95,
 ) -> tuple[float, float]:
     """Asymptotic `(lower, upper)` CI for the annualized Sharpe ratio."""
-    from ruin.ratios import sharpe_ratio
-
     r = to_series(returns)
     sr = sharpe_ratio(r, periods_per_year=periods_per_year)
     se = sharpe_standard_error(r, periods_per_year=periods_per_year)
@@ -80,8 +78,10 @@ def bootstrap_metric(
     for _ in range(n_samples):
         sample = rng.choice(arr, size=n, replace=True)
         s = pl.Series("r", sample, dtype=pl.Float64)
-        with contextlib.suppress(Exception):
+        try:
             estimates.append(fn(s))
+        except (ValueError, ZeroDivisionError):
+            continue
     if not estimates:
         return (point, float("nan"), float("nan"))
     estimates.sort()

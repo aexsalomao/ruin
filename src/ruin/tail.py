@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ruin._internal.normal import norm_ppf
+from ruin._internal.normal import norm_pdf, norm_ppf
 from ruin._internal.validate import ReturnInput, require_minimum_length, to_series
 
 
@@ -26,8 +26,8 @@ def value_at_risk(
         q = float(r.quantile(1.0 - confidence, interpolation="linear"))  # type: ignore[call-arg]
         return -q
     elif method == "parametric":
-        mu = float(r.mean())  # type: ignore[arg-type]
-        sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
+        mu = float(r.mean())
+        sigma = float(r.std(ddof=1))
         z = norm_ppf(1.0 - confidence)
         return -(mu + z * sigma)
     else:
@@ -55,12 +55,10 @@ def conditional_value_at_risk(
         tail = r.filter(r <= threshold)
         if len(tail) == 0:
             return -threshold
-        return -float(tail.mean())  # type: ignore[arg-type]
+        return -float(tail.mean())
     elif method == "parametric":
-        from ruin._internal.normal import norm_pdf
-
-        mu = float(r.mean())  # type: ignore[arg-type]
-        sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
+        mu = float(r.mean())
+        sigma = float(r.std(ddof=1))
         alpha = 1.0 - confidence
         z = norm_ppf(alpha)
         cvar = -(mu - sigma * norm_pdf(z) / alpha)

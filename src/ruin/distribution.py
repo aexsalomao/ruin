@@ -35,14 +35,14 @@ def skewness(returns: ReturnInput, *, bias: bool = False) -> float:
     r = to_series(returns)
     require_minimum_length(r, 3, "skewness")
     n = len(r)
-    mu = float(r.mean())  # type: ignore[arg-type]
-    sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
+    mu = float(r.mean())
+    sigma = float(r.std(ddof=1))
     # Guard against floating-point noise around zero variance: unique() on a
     # truly constant series is exactly one element.
     if sigma == 0.0 or r.n_unique() <= 1:
         return float("nan")
     cube = ((r - mu) / sigma) ** 3
-    m3 = float(cube.mean())  # type: ignore[arg-type]
+    m3 = float(cube.mean())
     if bias:
         return m3
     # Fisher-Pearson unbiased correction (SAS/SPSS convention):
@@ -59,12 +59,12 @@ def excess_kurtosis(returns: ReturnInput, *, bias: bool = False) -> float:
     r = to_series(returns)
     require_minimum_length(r, 4, "excess_kurtosis")
     n = len(r)
-    mu = float(r.mean())  # type: ignore[arg-type]
-    sigma = float(r.std(ddof=1))  # type: ignore[arg-type]
+    mu = float(r.mean())
+    sigma = float(r.std(ddof=1))
     if sigma == 0.0 or r.n_unique() <= 1:
         return float("nan")
     quad = ((r - mu) / sigma) ** 4
-    m4 = float(quad.mean())  # type: ignore[arg-type]
+    m4 = float(quad.mean())
     if bias:
         return m4 - 3.0
     # Unbiased (Fisher) excess kurtosis (SAS/SPSS/Excel KURT convention):

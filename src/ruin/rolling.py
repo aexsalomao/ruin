@@ -14,6 +14,11 @@ import numpy as np
 import polars as pl
 
 from ruin._internal.validate import FLOAT_DTYPE, INTERNAL_FLOAT_DTYPE, ReturnInput
+from ruin.activity import profit_factor as _pf
+from ruin.distribution import autocorrelation as _autocorr
+from ruin.distribution import excess_kurtosis as _kurtosis
+from ruin.distribution import skewness as _skewness
+from ruin.drawdown import max_drawdown as _mdd
 
 
 def _ensure_series(returns: ReturnInput) -> pl.Series:
@@ -243,8 +248,6 @@ def rolling_skewness(
     min_periods: int | None = None,
 ) -> pl.Series:
     """Rolling skewness. Integer window only."""
-    from ruin.distribution import skewness as _skewness
-
     s = _ensure_series(returns)
     window_int = _require_int_window(window, "rolling_skewness")
     mp = min_periods if min_periods is not None else window_int
@@ -258,8 +261,6 @@ def rolling_excess_kurtosis(
     min_periods: int | None = None,
 ) -> pl.Series:
     """Rolling excess kurtosis. Integer window only."""
-    from ruin.distribution import excess_kurtosis as _kurtosis
-
     s = _ensure_series(returns)
     window_int = _require_int_window(window, "rolling_excess_kurtosis")
     mp = min_periods if min_periods is not None else window_int
@@ -274,8 +275,6 @@ def rolling_autocorrelation(
     lag: int = 1,
 ) -> pl.Series:
     """Rolling lag-`k` autocorrelation. Integer window only."""
-    from ruin.distribution import autocorrelation as _autocorr
-
     s = _ensure_series(returns)
     window_int = _require_int_window(window, "rolling_autocorrelation")
     mp = min_periods if min_periods is not None else window_int
@@ -293,8 +292,6 @@ def rolling_max_drawdown(
     min_periods: int | None = None,
 ) -> pl.Series:
     """Rolling max drawdown (non-positive), recomputed from scratch per window. Integer window."""
-    from ruin.drawdown import max_drawdown as _mdd
-
     s = _ensure_series(returns)
     window_int = _require_int_window(window, "rolling_max_drawdown")
     mp = min_periods if min_periods is not None else window_int
@@ -324,8 +321,6 @@ def rolling_profit_factor(
     threshold: float = 0.0,
 ) -> pl.Series:
     """Rolling profit factor. Integer window only."""
-    from ruin.activity import profit_factor as _pf
-
     s = _ensure_series(returns)
     window_int = _require_int_window(window, "rolling_profit_factor")
     mp = min_periods if min_periods is not None else window_int

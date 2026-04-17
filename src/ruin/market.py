@@ -11,7 +11,7 @@ def beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
     """Market beta: `cov(r, b) / var(b)`. NaN if benchmark variance is zero."""
     r, b = align_benchmark(returns, benchmark)
     require_minimum_length(r, 2, "beta")
-    var_b = float(b.var(ddof=1))  # type: ignore[arg-type]
+    var_b = float(b.var(ddof=1))
     if var_b == 0.0:
         return float("nan")
     return _cov_manual(r, b, ddof=1) / var_b
@@ -22,8 +22,8 @@ def _cov_manual(a: pl.Series, b: pl.Series, ddof: int = 1) -> float:
     n = len(a)
     if n - ddof <= 0:
         return float("nan")
-    mean_a = float(a.mean())  # type: ignore[arg-type]
-    mean_b = float(b.mean())  # type: ignore[arg-type]
+    mean_a = float(a.mean())
+    mean_b = float(b.mean())
     return float(((a - mean_a) * (b - mean_b)).sum()) / (n - ddof)
 
 
@@ -84,7 +84,7 @@ def tracking_error(
     """Annualized std of active returns (`returns - benchmark`)."""
     r, b = align_benchmark(returns, benchmark)
     active = r - b
-    return float(active.std(ddof=ddof)) * (periods_per_year**0.5)  # type: ignore[arg-type]
+    return float(active.std(ddof=ddof)) * (periods_per_year**0.5)
 
 
 def correlation(returns: ReturnInput, benchmark: ReturnInput) -> float:

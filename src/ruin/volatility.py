@@ -9,7 +9,7 @@ def volatility(returns: ReturnInput, *, ddof: int = 1) -> float:
     """Periodic standard deviation of returns (not annualized). `ddof=1` is sample std."""
     r = to_series(returns)
     require_minimum_length(r, ddof + 1, "volatility")
-    return float(r.std(ddof=ddof))  # type: ignore[arg-type]
+    return float(r.std(ddof=ddof))
 
 
 def annualize_volatility(
@@ -53,4 +53,4 @@ def semi_deviation(returns: ReturnInput, *, ddof: int = 0) -> float:
         return 0.0
     if len(negative) - ddof <= 0:
         raise ValueError(f"Not enough negative observations for ddof={ddof}; got {len(negative)}.")
-    return float(negative.std(ddof=ddof))  # type: ignore[arg-type]
+    return float(negative.std(ddof=ddof))

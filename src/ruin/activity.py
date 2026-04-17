@@ -9,7 +9,7 @@ def hit_rate(returns: ReturnInput, *, threshold: float = 0.0) -> float:
     """Fraction of periods with `return > threshold`, in [0, 1]."""
     r = to_series(returns)
     require_minimum_length(r, 1, "hit_rate")
-    return float((r > threshold).mean())  # type: ignore[arg-type]
+    return float((r > threshold).mean())
 
 
 def average_win(returns: ReturnInput, *, threshold: float = 0.0) -> float:
@@ -18,7 +18,7 @@ def average_win(returns: ReturnInput, *, threshold: float = 0.0) -> float:
     wins = r.filter(r > threshold)
     if len(wins) == 0:
         return float("nan")
-    return float(wins.mean())  # type: ignore[arg-type]
+    return float(wins.mean())
 
 
 def average_loss(returns: ReturnInput, *, threshold: float = 0.0) -> float:
@@ -27,7 +27,7 @@ def average_loss(returns: ReturnInput, *, threshold: float = 0.0) -> float:
     losses = r.filter(r < threshold)
     if len(losses) == 0:
         return float("nan")
-    return float(losses.mean())  # type: ignore[arg-type]
+    return float(losses.mean())
 
 
 def win_loss_ratio(returns: ReturnInput, *, threshold: float = 0.0) -> float:
@@ -56,14 +56,14 @@ def best_period(returns: ReturnInput) -> float:
     """Maximum single-period return."""
     r = to_series(returns)
     require_minimum_length(r, 1, "best_period")
-    return float(r.max())  # type: ignore[arg-type]
+    return float(r.max())
 
 
 def worst_period(returns: ReturnInput) -> float:
     """Minimum single-period return."""
     r = to_series(returns)
     require_minimum_length(r, 1, "worst_period")
-    return float(r.min())  # type: ignore[arg-type]
+    return float(r.min())
 
 
 def longest_winning_streak(returns: ReturnInput, *, threshold: float = 0.0) -> int:

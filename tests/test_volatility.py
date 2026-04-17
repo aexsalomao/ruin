@@ -16,90 +16,98 @@ from ruin.volatility import (
 )
 
 
-class TestVolatility:
-    def test_known_value(self) -> None:
-        r = pl.Series([0.01, -0.01, 0.02, -0.02])
-        v = volatility(r)
-        expected = float(r.std(ddof=1))
-        assert math.isclose(v, expected, rel_tol=1e-9)
-
-    def test_ddof0_less_than_ddof1(self) -> None:
-        r = pl.Series([1.0, 2.0, 3.0, 4.0])
-        assert volatility(r, ddof=0) < volatility(r, ddof=1)
-
-    def test_single_element_raises(self) -> None:
-        with pytest.raises(ValueError):
-            volatility(pl.Series([0.01]))
-
-    def test_constant_series_is_zero(self) -> None:
-        r = pl.Series([0.001] * 100)
-        assert volatility(r) == 0.0
-
-    def test_numpy_input(self) -> None:
-        arr = np.array([0.01, -0.01, 0.02, -0.02])
-        assert math.isclose(volatility(arr), float(pl.Series(arr).std(ddof=1)), rel_tol=1e-9)
-
-    def test_scale_invariance(self) -> None:
-        r = pl.Series([0.01, -0.01, 0.02, -0.02])
-        assert math.isclose(volatility(r * 10), volatility(r) * 10, rel_tol=1e-9)
+def test_volatility_matches_sample_std() -> None:
+    r = pl.Series([0.01, -0.01, 0.02, -0.02])
+    v = volatility(r)
+    expected = float(r.std(ddof=1))
+    assert v == pytest.approx(expected, rel=1e-9)
 
 
-class TestAnnualizeVolatility:
-    def test_sqrt_of_time(self) -> None:
-        r = pl.Series([0.01, -0.01, 0.02, -0.02])
-        daily_vol = volatility(r)
-        ann_vol = annualize_volatility(r, periods_per_year=252)
-        assert math.isclose(ann_vol, daily_vol * math.sqrt(252), rel_tol=1e-9)
-
-    def test_invalid_periods_zero(self) -> None:
-        with pytest.raises(ValueError):
-            annualize_volatility(pl.Series([0.01, 0.02]), periods_per_year=0)
-
-    def test_invalid_periods_negative(self) -> None:
-        with pytest.raises(ValueError):
-            annualize_volatility(pl.Series([0.01, 0.02]), periods_per_year=-1)
+def test_volatility_ddof_zero_is_less_than_ddof_one() -> None:
+    r = pl.Series([1.0, 2.0, 3.0, 4.0])
+    assert volatility(r, ddof=0) < volatility(r, ddof=1)
 
 
-class TestDownsideDeviation:
-    def test_no_downside(self) -> None:
-        r = pl.Series([0.01, 0.02, 0.03])
-        assert downside_deviation(r, threshold=0.0) == 0.0
-
-    def test_all_downside(self) -> None:
-        r = pl.Series([-0.01, -0.02, -0.03])
-        assert downside_deviation(r, threshold=0.0) > 0.0
-
-    def test_symmetric_le_total_vol(self) -> None:
-        r = pl.Series([0.02, -0.02])
-        assert downside_deviation(r) <= volatility(r)
-
-    def test_threshold_shifts_downside(self) -> None:
-        # With threshold above every return, all periods contribute.
-        r = pl.Series([0.01, 0.02, 0.03])
-        assert downside_deviation(r, threshold=0.10) > 0.0
-
-    def test_invalid_ddof(self) -> None:
-        with pytest.raises(ValueError):
-            downside_deviation(pl.Series([-0.01]), ddof=2)
+def test_volatility_rejects_single_element_series() -> None:
+    with pytest.raises(ValueError):
+        volatility(pl.Series([0.01]))
 
 
-class TestSemiDeviation:
-    def test_all_positive_returns_zero(self) -> None:
-        r = pl.Series([0.01, 0.02, 0.03])
-        assert semi_deviation(r) == 0.0
+def test_volatility_is_zero_for_constant_series() -> None:
+    r = pl.Series([0.001] * 100)
+    assert volatility(r) == 0.0
 
-    def test_negative_only(self) -> None:
-        r = pl.Series([-0.01, -0.02])
-        sd = semi_deviation(r)
-        expected = float(pl.Series([-0.01, -0.02]).std(ddof=0))
-        assert math.isclose(sd, expected, rel_tol=1e-9)
 
-    def test_mixed_uses_only_negatives(self) -> None:
-        r = pl.Series([0.05, 0.05, -0.01, -0.02])
-        sd = semi_deviation(r)
-        expected = float(pl.Series([-0.01, -0.02]).std(ddof=0))
-        assert math.isclose(sd, expected, rel_tol=1e-9)
+def test_volatility_accepts_numpy_input() -> None:
+    arr = np.array([0.01, -0.01, 0.02, -0.02])
+    expected = float(pl.Series(arr).std(ddof=1))
+    assert volatility(arr) == pytest.approx(expected, rel=1e-9)
 
-    def test_invalid_ddof(self) -> None:
-        with pytest.raises(ValueError):
-            semi_deviation(pl.Series([-0.01]), ddof=2)
+
+def test_volatility_scales_linearly() -> None:
+    r = pl.Series([0.01, -0.01, 0.02, -0.02])
+    assert volatility(r * 10) == pytest.approx(volatility(r) * 10, rel=1e-9)
+
+
+def test_annualize_volatility_multiplies_by_sqrt_periods() -> None:
+    r = pl.Series([0.01, -0.01, 0.02, -0.02])
+    daily_vol = volatility(r)
+    ann_vol = annualize_volatility(r, periods_per_year=252)
+    assert ann_vol == pytest.approx(daily_vol * math.sqrt(252), rel=1e-9)
+
+
+def test_annualize_volatility_rejects_zero_periods() -> None:
+    with pytest.raises(ValueError):
+        annualize_volatility(pl.Series([0.01, 0.02]), periods_per_year=0)
+
+
+def test_annualize_volatility_rejects_negative_periods() -> None:
+    with pytest.raises(ValueError):
+        annualize_volatility(pl.Series([0.01, 0.02]), periods_per_year=-1)
+
+
+def test_downside_deviation_is_zero_without_downside() -> None:
+    r = pl.Series([0.01, 0.02, 0.03])
+    assert downside_deviation(r, threshold=0.0) == 0.0
+
+
+def test_downside_deviation_is_positive_when_all_returns_below_threshold() -> None:
+    r = pl.Series([-0.01, -0.02, -0.03])
+    assert downside_deviation(r, threshold=0.0) > 0.0
+
+
+def test_downside_deviation_is_at_most_total_volatility() -> None:
+    r = pl.Series([0.02, -0.02])
+    assert downside_deviation(r) <= volatility(r)
+
+
+def test_downside_deviation_includes_returns_below_threshold_above_zero() -> None:
+    r = pl.Series([0.01, 0.02, 0.03])
+    assert downside_deviation(r, threshold=0.10) > 0.0
+
+
+def test_downside_deviation_rejects_invalid_ddof() -> None:
+    with pytest.raises(ValueError):
+        downside_deviation(pl.Series([-0.01]), ddof=2)
+
+
+def test_semi_deviation_is_zero_when_all_returns_positive() -> None:
+    r = pl.Series([0.01, 0.02, 0.03])
+    assert semi_deviation(r) == 0.0
+
+
+def test_semi_deviation_matches_std_of_negatives() -> None:
+    r = pl.Series([-0.01, -0.02])
+    expected = float(pl.Series([-0.01, -0.02]).std(ddof=0))
+    assert semi_deviation(r) == pytest.approx(expected, rel=1e-9)
+
+
+def test_semi_deviation_uses_only_negative_returns() -> None:
+    r = pl.Series([0.05, 0.05, -0.01, -0.02])
+    expected = float(pl.Series([-0.01, -0.02]).std(ddof=0))
+    assert semi_deviation(r) == pytest.approx(expected, rel=1e-9)
+
+
+def test_semi_deviation_rejects_invalid_ddof() -> None:
+    with pytest.raises(ValueError):
+        semi_deviation(pl.Series([-0.01]), ddof=2)
