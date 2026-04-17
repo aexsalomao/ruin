@@ -1,4 +1,4 @@
-"""Tail risk: VaR and CVaR. Returned as positive loss magnitudes (0.02 = "lose up to 2%"). NaNs dropped."""
+"""Tail risk: VaR and CVaR. Returned as positive loss magnitudes (0.02 = "lose up to 2%")."""
 
 from __future__ import annotations
 

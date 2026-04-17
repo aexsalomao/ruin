@@ -28,7 +28,7 @@ def _cov_manual(a: pl.Series, b: pl.Series, ddof: int = 1) -> float:
 
 
 def downside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Beta computed only on periods where benchmark return < 0. NaN if no such periods or zero variance."""
+    """Beta on periods where benchmark < 0. NaN if fewer than 2 such periods or zero variance."""
     r, b = align_benchmark(returns, benchmark)
     mask = b < 0.0
     r_down = r.filter(mask)
@@ -43,7 +43,7 @@ def downside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def upside_beta(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Beta computed only on periods where benchmark return > 0. NaN if no such periods or zero variance."""
+    """Beta on periods where benchmark > 0. NaN if fewer than 2 such periods or zero variance."""
     r, b = align_benchmark(returns, benchmark)
     mask = b > 0.0
     r_up = r.filter(mask)
@@ -96,7 +96,7 @@ def correlation(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def up_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Up-market capture (geometric): strategy compounded return / benchmark compounded return, over b > 0 periods."""
+    """Up-market capture (geometric): strategy compound / benchmark compound, over b > 0 periods."""
     r, b = align_benchmark(returns, benchmark)
     mask = b > 0.0
     r_up = r.filter(mask)
@@ -111,7 +111,7 @@ def up_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
 
 
 def down_capture(returns: ReturnInput, benchmark: ReturnInput) -> float:
-    """Down-market capture (geometric): strategy compounded return / benchmark compounded return, over b < 0 periods."""
+    """Down-market capture (geometric): strategy compound / bench compound, over b < 0 periods."""
     r, b = align_benchmark(returns, benchmark)
     mask = b < 0.0
     r_down = r.filter(mask)

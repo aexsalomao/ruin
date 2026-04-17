@@ -31,7 +31,7 @@ def max_drawdown(returns: ReturnInput) -> float:
 
 
 def average_drawdown(returns: ReturnInput) -> float:
-    """Mean trough magnitude across distinct drawdown episodes. A new episode starts at each new HWM."""
+    """Mean trough magnitude across distinct drawdown episodes. New episode at each new HWM."""
     dd = drawdown_series(returns)
     if len(dd) == 0:
         return 0.0
@@ -78,7 +78,7 @@ def max_drawdown_duration(returns: ReturnInput) -> int:
 
 
 def recovery_time(returns: ReturnInput) -> float:
-    """Periods from the max-drawdown trough to the next new HWM. NaN if not recovered by series end."""
+    """Periods from the max-drawdown trough to the next new HWM. NaN if unrecovered."""
     r = to_series(returns)
     require_minimum_length(r, 1, "recovery_time")
     dd = drawdown_series(r)

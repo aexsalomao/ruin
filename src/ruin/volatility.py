@@ -1,4 +1,4 @@
-"""Volatility and dispersion measures. Inputs: pl.Series / np.ndarray / pl.DataFrame; NaNs dropped."""
+"""Volatility and dispersion measures. Inputs: Series/ndarray/DataFrame; NaNs dropped."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def annualize_volatility(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized volatility via sqrt-of-time. Assumes i.i.d. returns; breaks under autocorrelation."""
+    """Annualized volatility via sqrt-of-time. Assumes i.i.d.; breaks under autocorrelation."""
     if periods_per_year <= 0:
         raise ValueError(f"'periods_per_year' must be positive; got {periods_per_year}")
     return volatility(returns, ddof=ddof) * (periods_per_year**0.5)
@@ -30,7 +30,7 @@ def downside_deviation(
     threshold: float = 0.0,
     ddof: int = 0,
 ) -> float:
-    """Semi-std of returns below `threshold` (MAR). Denominator counts all periods (Sortino convention).
+    """Semi-std of returns below `threshold` (MAR). Denominator is all periods (Sortino convention).
 
     Only `r < threshold` contributes to the sum of squared deviations, but all periods are in the
     denominator. Use `semi_deviation` if you want the denominator restricted to downside obs.

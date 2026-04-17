@@ -15,7 +15,7 @@ def sharpe_ratio(
     periods_per_year: float,
     ddof: int = 1,
 ) -> float:
-    """Annualized Sharpe: `ann_excess_return / ann_volatility`. `risk_free` is per-period, not annualized."""
+    """Annualized Sharpe: `ann_excess_return / ann_volatility`. `risk_free` is per-period."""
     r = to_series(returns)
     require_minimum_length(r, ddof + 1, "sharpe_ratio")
     excess = r - risk_free
@@ -33,7 +33,7 @@ def sortino_ratio(
     threshold: float | None = None,
     periods_per_year: float,
 ) -> float:
-    """Annualized Sortino: `ann_excess_return / ann_downside_deviation`. `threshold` defaults to `risk_free`.
+    """Annualized Sortino: `ann_excess_return / ann_downside_deviation`. `threshold` defaults to rf.
 
     Downside deviation uses `ddof=0` with all periods in the denominator (not just downside).
     """
@@ -98,7 +98,7 @@ def treynor_ratio(
 
 
 def omega_ratio(returns: ReturnInput, *, threshold: float = 0.0) -> float:
-    """Omega: `sum(max(r - threshold, 0)) / sum(max(threshold - r, 0))`. NaN if no returns below threshold.
+    """Omega: `sum(max(r - threshold, 0)) / sum(max(threshold - r, 0))`. NaN if no downside.
 
     Omega > 1 iff `mean(r) > threshold` for any distribution with finite mean.
     """

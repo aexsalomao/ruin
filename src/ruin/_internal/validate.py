@@ -54,7 +54,7 @@ def to_series(returns: ReturnInput, name: str = "returns") -> pl.Series:
 
 
 def to_dataframe(returns: ReturnInput, name: str = "returns") -> pl.DataFrame:
-    """Coerce any supported input to a Float64 pl.DataFrame with rows containing any NaN/null dropped.
+    """Coerce any supported input to a Float64 pl.DataFrame; rows with any NaN/null are dropped.
 
     Scalar / Series inputs are wrapped in a single-column DataFrame named `name`.
     """
@@ -114,7 +114,7 @@ def align_benchmark(
     returns: ReturnInput,
     benchmark: ReturnInput,
 ) -> tuple[pl.Series, pl.Series]:
-    """Return `(r, b)` as equal-length Float64 Series. Trusts caller for order; requires equal length."""
+    """Return `(r, b)` as Float64 Series of equal length. Caller provides aligned order."""
     r = to_series(returns, name="returns")
     b = to_series(benchmark, name="benchmark")
     require_same_length(r, b)

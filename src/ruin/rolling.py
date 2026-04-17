@@ -292,7 +292,7 @@ def rolling_max_drawdown(
     window: int | str,
     min_periods: int | None = None,
 ) -> pl.Series:
-    """Rolling max drawdown (non-positive), recomputed from scratch within each window. Integer window only."""
+    """Rolling max drawdown (non-positive), recomputed from scratch per window. Integer window."""
     from ruin.drawdown import max_drawdown as _mdd
 
     s = _ensure_series(returns)

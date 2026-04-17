@@ -1,4 +1,4 @@
-"""Summary report — the single allowed bundling function. Pure composition of module-level metrics."""
+"""Summary report — the single allowed bundling function. Pure composition of module metrics."""
 
 from __future__ import annotations
 
@@ -105,7 +105,7 @@ def _cast_float_columns(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def _safe(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Call `fn`; return NaN on "metric undefined" errors (too few obs, zero variance). Other errors propagate."""
+    """Call `fn`; return NaN on "metric undefined" errors (few obs, zero variance). Else raise."""
     try:
         result = fn(*args, **kwargs)
     except (ValueError, ZeroDivisionError):

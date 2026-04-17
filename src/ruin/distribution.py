@@ -20,7 +20,7 @@ __all__ = [
 
 @dataclass(frozen=True)
 class JarqueBeraResult:
-    """Jarque-Bera result. `statistic` is the JB value; `p_value` is the asymptotic chi2(2) p-value."""
+    """Jarque-Bera result. `statistic` is the JB value; `p_value` is from asymptotic chi2(2)."""
 
     statistic: float
     p_value: float

@@ -1,4 +1,4 @@
-"""Return computation. Inputs: pl.Series / np.ndarray / pl.DataFrame; NaNs dropped. Returns are fractions (0.01 = 1%)."""
+"""Return computation. Inputs: Series/ndarray/DataFrame; NaNs dropped. Fractions (0.01 = 1%)."""
 
 from __future__ import annotations
 

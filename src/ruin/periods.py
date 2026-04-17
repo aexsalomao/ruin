@@ -1,4 +1,4 @@
-"""Time-slicing helpers and rate conversion. Period slicers require a date column; rate fns are pure arithmetic."""
+"""Time-slicing helpers and rate conversion. Slicers need a date column; rate fns are arithmetic."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ def mtd(
     date_col: str,
     as_of: datetime.date | None = None,
 ) -> pl.DataFrame | pl.Series:
-    """Month-to-date slice. `as_of` defaults to today; `returns` must carry a date dtype / column."""
+    """Month-to-date slice. `as_of` defaults to today; `returns` must carry a date dtype/col."""
     ref = as_of or datetime.date.today()
     month_start = ref.replace(day=1)
     if isinstance(returns, pl.Series):
@@ -84,7 +84,7 @@ _FREQUENCY_PERIODS: dict[str, int] = {
 
 
 def periods_per_year_for(frequency: str) -> int:
-    """Conventional periods/year for a frequency. D=252, W=52, M=12, Q=4, A/Y=1. Raises on unknown."""
+    """Conventional periods/year: D=252, W=52, M=12, Q=4, A/Y=1. Raises on unknown frequency."""
     key = frequency.upper()
     if key not in _FREQUENCY_PERIODS:
         raise ValueError(
