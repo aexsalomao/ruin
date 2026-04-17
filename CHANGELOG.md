@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-17
+
+### Changed
+- Distribution name on PyPI is **`pyruin`** (the name `ruin` was taken). The import name is unchanged: `import ruin`. Configured via `tool.uv.build-backend.module-name = "ruin"` so the wheel still installs the `ruin` package.
+
 ## [0.1.0] - 2026-04-17
 
 ### Added
